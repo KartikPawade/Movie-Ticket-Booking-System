@@ -3,6 +3,8 @@ package com.movienow.org.service;
 import com.movienow.org.dto.RegisterRequest;
 import com.movienow.org.entity.AppUser;
 import com.movienow.org.entity.UserRole;
+import com.movienow.org.exception.BadRequestException;
+import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.RoleRepository;
 import com.movienow.org.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +34,10 @@ public class UserService {
         // check if already present with email
         Optional<AppUser> optionalUser = userRepository.findByEmail(registerRequest.getEmail());
         if (optionalUser.isPresent()) {
-            throw new RuntimeException();
+            throw new BadRequestException("User already present with given email");
         }
         // validate role
-        UserRole userRole = roleRepository.findByRole(registerRequest.getRole()).orElseThrow(() -> new RuntimeException());
-
+        UserRole userRole = roleRepository.findByRole(registerRequest.getRole()).orElseThrow(() -> new NotFoundException("Role not found"));
 
         AppUser appUser = new AppUser();
         appUser.setFirstName(registerRequest.getFirstName());
