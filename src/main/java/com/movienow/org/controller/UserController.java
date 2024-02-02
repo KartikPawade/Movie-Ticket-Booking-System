@@ -1,7 +1,7 @@
 package com.movienow.org.controller;
 
 import com.movienow.org.dto.LoginRequest;
-import com.movienow.org.dto.RegisterUserDto;
+import com.movienow.org.dto.RegisterRequest;
 import com.movienow.org.security.JwtUtils;
 import com.movienow.org.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,12 +36,12 @@ public class UserController {
     /**
      * Used to register user
      *
-     * @param registerUserDto
+     * @param registerRequest
      * @return
      */
     @PostMapping("/register")
-    public ResponseEntity<Object> registerUser(@RequestBody RegisterUserDto registerUserDto) {
-        return ResponseEntity.ok().body(userService.registerUser(registerUserDto));
+    public ResponseEntity<Object> registerUser(@RequestBody RegisterRequest registerRequest) {
+        return ResponseEntity.ok().body(userService.registerUser(registerRequest));
     }
 
     /**

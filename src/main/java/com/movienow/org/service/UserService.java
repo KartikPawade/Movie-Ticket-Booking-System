@@ -1,7 +1,9 @@
 package com.movienow.org.service;
 
-import com.movienow.org.dto.RegisterUserDto;
+import com.movienow.org.dto.RegisterRequest;
 import com.movienow.org.entity.AppUser;
+import com.movienow.org.entity.UserRole;
+import com.movienow.org.repository.RoleRepository;
 import com.movienow.org.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,27 +18,34 @@ public class UserService {
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private RoleRepository roleRepository;
 
 
     /**
      * Used to register new User
      *
-     * @param registerUserDto
+     * @param registerRequest
      * @return
      */
-    public String registerUser(RegisterUserDto registerUserDto) {
+    public String registerUser(RegisterRequest registerRequest) {
         // check if already present with email
-        Optional<AppUser> optionalUser = userRepository.findByEmail(registerUserDto.getEmail());
-        if(optionalUser.isPresent()){
+        Optional<AppUser> optionalUser = userRepository.findByEmail(registerRequest.getEmail());
+        if (optionalUser.isPresent()) {
             throw new RuntimeException();
         }
+        // validate role
+        UserRole userRole = roleRepository.findByRole(registerRequest.getRole()).orElseThrow(() -> new RuntimeException());
+
 
         AppUser appUser = new AppUser();
-        appUser.setFirstName(registerUserDto.getFirstName());
-        appUser.setLastName(registerUserDto.getLastName());
-        appUser.setEmail(registerUserDto.getEmail());
-        appUser.setPhone(registerUserDto.getPhone());
-        appUser.setPassword(passwordEncoder.encode(registerUserDto.getPassword()));
+        appUser.setFirstName(registerRequest.getFirstName());
+        appUser.setLastName(registerRequest.getLastName());
+        appUser.setEmail(registerRequest.getEmail());
+        appUser.setPhone(registerRequest.getPhone());
+        appUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+
+        appUser.setUserRole(userRole);
         userRepository.save(appUser);
         return "user saved successfully";
     }

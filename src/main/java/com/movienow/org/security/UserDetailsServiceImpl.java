@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,7 +29,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
 
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-//      grantedAuthorities.add(new SimpleGrantedAuthority(appUser.getUserRole().getRole().toString()));// One User currently having only 1 role
+      grantedAuthorities.add(new SimpleGrantedAuthority(appUser.getUserRole().getRole().toString()));// One User currently having only 1 role
 
         return new UserDetailImpl(appUser.getEmail(), appUser.getPassword(), grantedAuthorities);
     }

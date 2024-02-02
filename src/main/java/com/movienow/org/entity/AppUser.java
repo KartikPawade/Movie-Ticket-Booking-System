@@ -1,5 +1,6 @@
 package com.movienow.org.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -33,7 +34,7 @@ public class AppUser {
     private String password;
     private Long phone;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "role_id")
     private UserRole userRole;
 }
