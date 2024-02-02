@@ -26,12 +26,6 @@ public class UserController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    /**
-     * 1. register user
-     * 2. login user
-     * 3. logout user
-     */
-
 
     /**
      * Used to register user
