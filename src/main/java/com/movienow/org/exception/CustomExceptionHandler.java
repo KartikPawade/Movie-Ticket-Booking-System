@@ -51,6 +51,13 @@ public class CustomExceptionHandler {
         return buildResponseEntity(exceptionResponse);
     }
 
+    @ExceptionHandler(value = Exception.class)
+    public ResponseEntity<ExceptionResponse> accessDeniedException(Exception ex) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR);
+        exceptionResponse.setMessage(ex.getMessage());
+        return buildResponseEntity(exceptionResponse);
+    }
+
     /**
      * Used to return exception response
      * @param exceptionResponse

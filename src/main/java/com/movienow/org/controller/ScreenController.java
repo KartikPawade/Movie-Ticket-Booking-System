@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value = "v1")
+@RequestMapping(value = "/v1")
 public class ScreenController {
     @Autowired
     private ScreenService screenService;
+
     /**
      * 1. add screen wit movie
      * 2. delete screen with movie
@@ -32,9 +33,9 @@ public class ScreenController {
      */
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/theatres/{theatreId}/movies/{movieId}/screens")
+    @GetMapping("/cities/theatres/{theatreId}/movies/{cityMovieId}/screens")
     public ResponseEntity<Object> getScreens(@PathVariable(value = "theatreId") final Long theatreId,
-                                             @PathVariable(value = "movieId") final Long movieId) {
-        return ResponseEntity.ok().body(screenService.getScreens(theatreId,movieId));
+                                             @PathVariable(value = "cityMovieId") final Long cityMovieId) {
+        return ResponseEntity.ok().body(screenService.getScreens(theatreId, cityMovieId));
     }
 }
