@@ -10,15 +10,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value = "/v1/movies")
+@RequestMapping(value = "/v1")
 public class MovieController {
     @Autowired
     private MovieService movieService;
 
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping(value = "/{cityId}")
+    @GetMapping(value = "/cities/{cityId}/movies")
     public ResponseEntity<Object> getMovies(@PathVariable("cityId") final Long cityId) {
         return ResponseEntity.ok().body(movieService.getMovies(cityId));
+    }
+
+    @PreAuthorize("hasAuthority('USER')")
+    @GetMapping(value = "/cities/theatres/{theatreId}/movies")
+    public ResponseEntity<Object> getMoviesForTheatre(@PathVariable("theatreId") final Long theatreId) {
+        return ResponseEntity.ok().body(movieService.getMoviesForTheatre(theatreId));
     }
 }

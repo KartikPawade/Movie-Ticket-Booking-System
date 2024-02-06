@@ -1,9 +1,9 @@
 package com.movienow.org.dto;
 
 public interface TheatreMovieResponse {
-    Long getId();
+    Long getTheatreId();
 
-    String getName();
+    String getTheatreName();
 
     Long getMovieId();
 
