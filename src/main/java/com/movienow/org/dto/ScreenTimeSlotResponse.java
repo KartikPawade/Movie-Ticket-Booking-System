@@ -9,7 +9,7 @@ import java.sql.Time;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TimeSlotDetails {
-    private Long timeSlotId;
-    private Time slotTime;
+public class ScreenTimeSlotResponse {
+    Long timeSlotId;
+    Time slotTime;
 }

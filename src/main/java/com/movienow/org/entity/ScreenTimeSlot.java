@@ -1,6 +1,5 @@
 package com.movienow.org.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,7 +17,7 @@ import java.sql.Time;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TimeSlot {
+public class ScreenTimeSlot {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -28,6 +27,5 @@ public class TimeSlot {
     @JoinColumn(name = "screen_id")
     private Screen screen;
 
-    @Column(name = "till_date")
-    private Date tillDate;
+    private Date date;
 }
