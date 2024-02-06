@@ -1,5 +1,6 @@
 package com.movienow.org.repository;
 
+import com.movienow.org.dto.TheatreMovieResponse;
 import com.movienow.org.dto.TheatreResponse;
 import com.movienow.org.entity.Theatre;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,14 @@ public interface TheatreRepository extends JpaRepository<Theatre, Long> {
             , nativeQuery = true)
     List<TheatreResponse> getTheatres(@Param(value = "cityId") Long cityId);
 
+    @Query(value = "select t.id, t.name ,m.id as movieId, m.name as movieName from theatre t " +
+            "join theatre_movie tm " +
+            "on t.id = tm.theatre_id " +
+            "join city_movie cm " +
+            "on cm.id = tm.city_movie_id " +
+            "join movie m " +
+            "on m.id = cm.movie_id " +
+            "where cm.id = :cityMovieId "
+            , nativeQuery = true)
+    List<TheatreMovieResponse> getTheatresForMovieInCity(@Param(value = "cityMovieId") Long cityMovieId);
 }

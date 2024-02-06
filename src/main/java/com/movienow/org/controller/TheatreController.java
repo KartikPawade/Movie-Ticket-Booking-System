@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("v1/theatres")
+@RequestMapping("/v1/")
 public class TheatreController {
     @Autowired
     private TheatreService theatreService;
@@ -24,14 +24,20 @@ public class TheatreController {
      */
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping("/add-theatre")
+    @PostMapping("city/theatres/add-theatre")
     public ResponseEntity<Object> addTheatre(@RequestBody AddTheatreRequest addTheatreRequest) {
         return ResponseEntity.ok().body(theatreService.addTheatre(addTheatreRequest));
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/{cityId}")
+    @GetMapping("city/theatres/{cityId}")
     public ResponseEntity<Object> getTheatres(@PathVariable("cityId") final Long cityId) {
         return ResponseEntity.ok().body(theatreService.getTheatres(cityId));
+    }
+
+    @PreAuthorize("hasAuthority('USER')")
+    @GetMapping("city/movies/{cityMovieId}/theatres")
+    public ResponseEntity<Object> getTheatresForMovieInCity(@PathVariable("cityMovieId") final Long cityMovieId) {
+        return ResponseEntity.ok().body(theatreService.getTheatresForMovie(cityMovieId));
     }
 }
