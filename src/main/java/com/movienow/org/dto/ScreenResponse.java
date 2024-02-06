@@ -1,15 +1,18 @@
 package com.movienow.org.dto;
 
-public interface ScreenResponse {
-    Long getScreenId();
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    String getScreenName();
+import java.util.Map;
 
-    Long getTheatreId();
-
-    String getTheatreName();
-
-    Long getMovieId();
-
-    String getMovieName();
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ScreenResponse {
+    private Long theatreId;
+    private String theatreName;
+    private Long movieId;
+    private String movieName;
+    Map<Long, ScreenDetails> screens;
 }
