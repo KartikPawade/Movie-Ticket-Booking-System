@@ -12,10 +12,11 @@ import java.util.List;
 @Repository
 public interface ScreenTimeSlotRepository extends JpaRepository<ScreenTimeSlot, Long> {
     @Query(value = "select id as timeSlotId, date, start_time as slotTime from screen_time_slot sts " +
-            "where screen_id = 1 " +
-            "and sts.screen_id = :screenId " +
-            "group by id, date, start_time  " +
-            "order by date, start_time "
+            "where screen_id = :screenId and date = current_date and start_time > current_time " +
+            "union " +
+            "select id as timeSlotId, date, start_time as slotTime  from screen_time_slot sts " +
+            "where screen_id = :screenId and date > current_date " +
+            "order by date , slotTime "
             , nativeQuery = true)
     List<ScreenTimeSlotDetails> getTimeSlots(@Param(value = "screenId") Long screenId);
 }
