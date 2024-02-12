@@ -24,4 +24,6 @@ public class TimeSlotController {
     public ResponseEntity<Object> getTimeSlots(@PathVariable("screenId") final Long screenId) {
         return ResponseEntity.ok().body(screenTimeSlotService.getTimeSlots(screenId));
     }
+
+
 }
