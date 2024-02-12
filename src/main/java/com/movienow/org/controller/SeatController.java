@@ -1,6 +1,6 @@
 package com.movienow.org.controller;
 
-import com.movienow.org.dto.SeatBookingRequest;
+import com.movienow.org.payment.PaymentRequest;
 import com.movienow.org.service.SeatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,9 +37,10 @@ public class SeatController {
     public ResponseEntity<Object> bookSeats(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody List<Long> seatTimeSlotIds) {
         return ResponseEntity.ok().body(seatService.bookSeats(timeSlotId,  seatTimeSlotIds));
     }
+
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats/transactions")
-    public ResponseEntity<Object> doPayment(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody List<Long> seatTimeSlotIds) {
-        return ResponseEntity.ok().body(seatService.doPayment());
+    @PostMapping("/cities/theatres/movies/screens/time-slots/seats/checkout")
+    public ResponseEntity<Object> doPayment(@RequestBody PaymentRequest paymentRequest) {
+        return ResponseEntity.ok().body(seatService.doPayment(paymentRequest));
     }
 }
