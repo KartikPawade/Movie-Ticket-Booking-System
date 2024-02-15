@@ -1,5 +1,6 @@
 package com.movienow.org.service;
 
+import com.movienow.org.EmailDetailsDto;
 import com.movienow.org.dto.BookingResponse;
 import com.movienow.org.dto.SeatResponse;
 import com.movienow.org.dto.UserBookingDetails;
@@ -129,11 +130,17 @@ public class SeatService {
         }
         // do payment
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
+        System.out.println(totalPrice);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
             savePaymentDetails(paymentResponse, userDetails, timeSlotSeatIds, totalPrice);
         }
+        EmailDetailsDto emailDetails = new EmailDetailsDto(userName, totalPrice, timeSlotSeatIds);
+        emailConsumerService.sendEmail(emailDetails);
+
         return "Payment Successful";
     }
+    @Autowired
+    private EmailConsumerService emailConsumerService;
 
 
     /**
