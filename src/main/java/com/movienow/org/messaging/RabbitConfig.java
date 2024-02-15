@@ -22,6 +22,7 @@ public class RabbitConfig {
     @Value("${rabbitmq.email.binding.key}")
     private String emailBindingKey;
 
+
     @Bean
     public Queue emailQueue() {
         return new Queue(emailQueueName);

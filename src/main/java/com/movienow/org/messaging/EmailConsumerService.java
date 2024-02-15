@@ -23,9 +23,9 @@ public class EmailConsumerService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @RabbitListener(queues = "email_queue", concurrency = "4")
+    @RabbitListener(queues = "email_queue", concurrency = "4", ackMode = "Manual")
     @Retryable(value = {Exception.class}, maxAttempts = 3, backoff = @Backoff(1000))
-    public void sendEmail(String customerEmail, Channel channel,  @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+    public void sendEmail(String customerEmail) throws IOException {
         try {
             SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
             simpleMailMessage.setFrom("kartikpawade25@gmail.com");
@@ -34,7 +34,6 @@ public class EmailConsumerService {
             simpleMailMessage.setSubject("Movie Tickets Booked");
             javaMailSender.send(simpleMailMessage);
 
-            channel.basicAck(deliveryTag, false);
         }catch (Exception e){
             log.error("Email Consumer Service::" + e.getMessage());
             throw e;
