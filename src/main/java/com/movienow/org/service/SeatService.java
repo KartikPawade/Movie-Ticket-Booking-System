@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class SeatService {
@@ -66,12 +67,12 @@ public class SeatService {
      * @param timeSlotId
      * @return
      */
-    public Object bookSeats(Long timeSlotId, List<Long> seatTimeSlotIds) {
-        List<BookingResponse> bookingResponses = screenTimeSlotRepository.getSeats(timeSlotId, seatTimeSlotIds);
-        if (bookingResponses.size() != seatTimeSlotIds.size()) throw new BadRequestException("Invalid Request.");
+    public Object bookSeats(Long timeSlotId, List<Long> seatIds) {
+        List<BookingResponse> bookingResponses = screenTimeSlotRepository.getSeats(timeSlotId, seatIds);
+        if (bookingResponses.size() != seatIds.size()) throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
 
-        for (Long seatTimeSlotId : seatTimeSlotIds) {
-            if (redisTemplate.opsForHash().get(seatTimeSlotId.toString(), seatTimeSlotId) != null) {
+        for (Long seatId : seatIds) {
+            if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
                 throw new BadRequestException("Requested seats are booked by someone.");
             }
         }
@@ -81,8 +82,8 @@ public class SeatService {
         List<UserBookingDetails> userBookingDetailsList = new ArrayList<>();
         for (BookingResponse bookingResponse : bookingResponses) {
             UserBookingDetails userBookingDetails = getUserBokkingDetails(bookingResponse);
-            redisTemplate.opsForHash().put(bookingResponse.getSeatTimeSlotId().toString(), bookingResponse.getSeatTimeSlotId(), userBookingDetails);
-            redisTemplate.expire(bookingResponse.getSeatTimeSlotId().toString(), Duration.ofMinutes(Integer.parseInt(redisKeyExpiryTime)));
+            redisTemplate.opsForHash().put(bookingResponse.getSeatId().toString(), bookingResponse.getSeatId(), userBookingDetails);
+            redisTemplate.expire(bookingResponse.getSeatId().toString(), Duration.ofMinutes(Integer.parseInt(redisKeyExpiryTime)));
             userBookingDetailsList.add(getUserBokkingDetails(bookingResponse));
         }
         redisTemplate.opsForHash().put(userName, userName, userBookingDetailsList);
@@ -99,7 +100,7 @@ public class SeatService {
      */
     private UserBookingDetails getUserBokkingDetails(BookingResponse bookingResponse) {
         UserBookingDetails userBookingDetails = new UserBookingDetails();
-        userBookingDetails.setTimeSlotSeatId(bookingResponse.getSeatTimeSlotId());
+        userBookingDetails.setSeatId(bookingResponse.getSeatId());
         userBookingDetails.setPrice(bookingResponse.getPrice());
         return userBookingDetails;
     }
@@ -111,26 +112,26 @@ public class SeatService {
      * @return
      */
     @Transactional
-    public String doPayment(PaymentRequest paymentRequest) {
+    public String doPayment(Long timeSlotId, PaymentRequest paymentRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userDetails.getUsername();
         Double totalPrice = (double) 0;
-        List<Long> timeSlotSeatIds = new ArrayList<>();
+        Set<Long> seatIds = paymentRequest.getSeatIds();
         try {
             List<UserBookingDetails> list = (List<UserBookingDetails>) redisTemplate.opsForHash().get(userName, userName);
             if (list == null) throw new BadRequestException("Payment window Timeout.");
 
             for (UserBookingDetails userBookingDetails : list) {
+                if(!seatIds.contains(userBookingDetails.getSeatId()))throw new BadRequestException("Invalid Seat Bookings Requested.");
                 totalPrice += userBookingDetails.getPrice();
-                timeSlotSeatIds.add(userBookingDetails.getTimeSlotSeatId());
             }
         } catch (Exception e) {
             throw new BadRequestException(e.getMessage());
         }
-        // do payment
+
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
-            savePaymentDetails(paymentResponse, userDetails, timeSlotSeatIds, totalPrice);
+            savePaymentDetails(paymentResponse, userDetails,timeSlotId, seatIds, totalPrice);
         }
         return "Payment Successful";
     }
@@ -141,13 +142,14 @@ public class SeatService {
      *
      * @param paymentResponse
      * @param userDetails
-     * @param timeSlotSeatIds
+     * @param timeSlotId
+     * @param seatIds
      * @param totalPrice
      */
-    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, List<Long> timeSlotSeatIds, Double totalPrice) {
+    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, Long timeSlotId, Set<Long> seatIds, Double totalPrice) {
         List<BookingDetails> bookingDetailsList = new ArrayList<>();
         AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));
-        List<TimeSlotSeat> timeSlotSeats = seatTimeSlotRepository.findAllById(timeSlotSeatIds);
+        List<TimeSlotSeat> timeSlotSeats = seatTimeSlotRepository.findAllTimeSlotSeatRecords(timeSlotId,seatIds);
         ScreenTimeSlot timeSlot = new ScreenTimeSlot();
         if (!timeSlotSeats.isEmpty()) timeSlot = timeSlotSeats.get(0).getTimeSlot();
         String chargeId = paymentResponse.getChargeId();

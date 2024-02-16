@@ -6,6 +6,6 @@ import java.io.Serializable;
 
 @Data
 public class UserBookingDetails implements Serializable {
-    Long timeSlotSeatId;
+    Long seatId;
     Double price;
 }

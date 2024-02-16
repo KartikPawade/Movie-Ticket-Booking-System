@@ -35,12 +35,12 @@ public class SeatController {
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
     public ResponseEntity<Object> bookSeats(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody List<Long> seatTimeSlotIds) {
-        return ResponseEntity.ok().body(seatService.bookSeats(timeSlotId,  seatTimeSlotIds));
+        return ResponseEntity.ok().body(seatService.bookSeats(timeSlotId, seatTimeSlotIds));
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/seats/checkout")
-    public ResponseEntity<Object> doPayment(@RequestBody PaymentRequest paymentRequest) {
-        return ResponseEntity.ok().body(seatService.doPayment(paymentRequest));
+    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats/checkout")
+    public ResponseEntity<Object> doPayment(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody PaymentRequest paymentRequest) {
+        return ResponseEntity.ok().body(seatService.doPayment(timeSlotId, paymentRequest));
     }
 }
