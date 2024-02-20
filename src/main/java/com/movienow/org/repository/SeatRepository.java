@@ -11,10 +11,10 @@ import java.util.List;
 
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, Long> {
-    @Query(value = "select tss.id as seatTimeSlotId, tss.booked, tss.seat_id as seatId, s.price  from time_slot_seat tss " +
-            "join seat s  " +
+    @Query(value = "select s.id seatId, s.price from seat s " +
+            "join time_slot_seat tss " +
             "on s.id = tss .seat_id " +
-            "where tss.booked = 'N' and tss.time_slot_id = :timeSlotId "
+            "where tss.time_slot_id = :timeSlotId and tss.booked = 'N' "
             , nativeQuery = true)
     List<SeatResponse> getSeats(@Param(value = "timeSlotId") Long timeSlotId);
 }
