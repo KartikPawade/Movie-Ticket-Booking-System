@@ -1,6 +1,5 @@
 package com.movienow.org.messaging;
 
-import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -39,16 +38,20 @@ public class RabbitConfig {
     }
 
     @Bean
-    public AmqpTemplate amqpTemplate(ConnectionFactory connectionFactory) {
+    public RabbitTemplate amqpTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate();
+        rabbitTemplate.setMessageConverter(messageConverter());
         rabbitTemplate.setConnectionFactory(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter());
         return rabbitTemplate;
     }
 
 
+
+
     @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
     }
+
 }
