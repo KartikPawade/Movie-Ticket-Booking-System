@@ -1,13 +1,11 @@
 package com.movienow.org.controller;
 
+import com.movienow.org.dto.MovieRequest;
 import com.movienow.org.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/v1")
@@ -26,5 +24,11 @@ public class MovieController {
     @GetMapping(value = "/cities/theatres/{theatreId}/movies")
     public ResponseEntity<Object> getMoviesForTheatre(@PathVariable("theatreId") final Long theatreId) {
         return ResponseEntity.ok().body(movieService.getMoviesForTheatre(theatreId));
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/cities/theatres/movies")
+    public ResponseEntity<Object> addMovies(@RequestBody MovieRequest movieRequest) {
+        return ResponseEntity.ok().body(movieService.addMovie(movieRequest));
     }
 }
