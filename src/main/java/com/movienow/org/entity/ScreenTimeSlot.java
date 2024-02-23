@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,8 @@ public class ScreenTimeSlot {
     private Long id;
 
     private Time startTime;
+
+
     @ManyToOne
     @JoinColumn(name = "screen_movie_id")
     private ScreenMovie screenMovie;

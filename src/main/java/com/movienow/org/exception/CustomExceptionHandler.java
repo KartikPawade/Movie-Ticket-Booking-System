@@ -1,5 +1,6 @@
 package com.movienow.org.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,13 @@ public class CustomExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<ExceptionResponse> accessDeniedException(Exception ex) {
         ExceptionResponse exceptionResponse = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR);
+        exceptionResponse.setMessage(ex.getMessage());
+        return buildResponseEntity(exceptionResponse);
+    }
+
+    @ExceptionHandler(value = ConstraintViolationException.class)
+    public ResponseEntity<ExceptionResponse> accessDeniedException(ConstraintViolationException ex) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(HttpStatus.BAD_REQUEST);
         exceptionResponse.setMessage(ex.getMessage());
         return buildResponseEntity(exceptionResponse);
     }

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_city_movie",columnNames = {"city","movie"})
+        @UniqueConstraint(name = "uk_city_movie",columnNames = {"city_id","movie_id"})
 })
 public class CityMovie {
     @Id
