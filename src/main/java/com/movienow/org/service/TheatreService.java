@@ -65,8 +65,7 @@ public class TheatreService {
      */
     public List<TheatreDetails> getTheatres(Long cityId) {
         cityRepository.findById(cityId).orElseThrow(() -> new NotFoundException("City not found for given cityId"));
-//        return theatreRepository.getTheatres(cityId);
-        return null;
+        return theatreRepository.getTheatres(cityId);
     }
 
     /**

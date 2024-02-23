@@ -18,7 +18,7 @@ public class Theatre {
 
     private String address;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "city_id")
     private City city;
 }
