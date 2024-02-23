@@ -1,12 +1,12 @@
 package com.movienow.org.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -19,7 +19,8 @@ public class Movie {
 
     private String name;
 
-//    private Integer movieLengthInMinutes:
-//    private Date startDate;
-//    private Date endDate;
+    private Short movieLengthInMinutes;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
+    private List<CityMovie> cityMovieList = new ArrayList<>();
 }

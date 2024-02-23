@@ -17,7 +17,5 @@ import java.util.Map;
 @NoArgsConstructor
 public class MovieTimeSlotRequest {
     private Short seatPrice;
-    @NotNull(message = "Invalid")
-    private Short movieLengthInMinutes;
     private Map<Date, List<Time>> timeSlots = new HashMap<>();
 }

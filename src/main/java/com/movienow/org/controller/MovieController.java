@@ -29,7 +29,7 @@ public class MovieController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(value = "/cities/theatres/movies")
+    @PostMapping(value = "/movies")
     public ResponseEntity<Object> addMovie(@RequestBody MovieRequest movieRequest) {
         return ResponseEntity.ok().body(movieService.addMovie(movieRequest));
     }

@@ -30,8 +30,6 @@ public class ScreenMovie {
 
     private Short seatPrice;
 
-    private Short movieLengthInMinutes;
-
     @OneToMany(mappedBy = "screenMovie",cascade = CascadeType.ALL)
     List<ScreenTimeSlot> screenTimeSlots = new ArrayList<>();
 }

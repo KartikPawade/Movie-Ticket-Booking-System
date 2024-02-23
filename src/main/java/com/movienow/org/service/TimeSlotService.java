@@ -3,16 +3,11 @@ package com.movienow.org.service;
 import com.movienow.org.dto.MovieTimeSlotRequest;
 import com.movienow.org.dto.ScreenTimeSlotDetails;
 import com.movienow.org.dto.ScreenTimeSlotResponse;
-import com.movienow.org.entity.Movie;
-import com.movienow.org.entity.Screen;
-import com.movienow.org.entity.ScreenMovie;
-import com.movienow.org.entity.ScreenTimeSlot;
+import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
-import com.movienow.org.repository.MovieRepository;
-import com.movienow.org.repository.ScreenMovieRepository;
-import com.movienow.org.repository.ScreenRepository;
-import com.movienow.org.repository.ScreenTimeSlotRepository;
+import com.movienow.org.repository.*;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +33,8 @@ public class TimeSlotService {
     private ScreenMovieRepository screenMovieRepository;
     @Autowired
     private MovieRepository movieRepository;
+    @Autowired
+    private CityMovieRepository cityMovieRepository;
 
     /**
      * Used to get all Time Slots for available days for a screen
@@ -85,6 +82,7 @@ public class TimeSlotService {
      * @param movieTimeSlotRequest
      * @return
      */
+    @Transactional
     public String addMovieToScreenWithTimeSlots(@NotNull(message = "Invalid") Long movieId, Long screenId, @Valid MovieTimeSlotRequest movieTimeSlotRequest) {
         // validation
         Movie movie = movieRepository.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found for given Id."));
@@ -92,12 +90,62 @@ public class TimeSlotService {
 
         Optional<ScreenMovie> optionalScreenMovie = screenMovieRepository.findByMovieIdAndScreenId(movieId, screenId);
         if (optionalScreenMovie.isPresent()) throw new BadRequestException("Screen already has given Movie.");
-        validateMovieTimeSLotRequest(movieTimeSlotRequest);
+        validateMovieTimeSLotRequest(movieTimeSlotRequest, movie.getMovieLengthInMinutes());
 
         ScreenMovie screenMovie = getScreenMovie(movieTimeSlotRequest, screen, movie);
+        addCityMovie(screen, movie);
 
         screenMovieRepository.save(screenMovie);
         return "Movie added to Screen with Time-Slots";
+    }
+
+    /**
+     * Used to link Movie to City and Theatre
+     *
+     * @param screen
+     * @param movie
+     */
+    private void addCityMovie(Screen screen, Movie movie) {
+        Theatre theatre = screen.getTheatre();
+        City city = theatre.getCity();
+        Long cityId = city.getId();
+
+
+        Optional<CityMovie> optionalCityMovie = movie.getCityMovieList().stream().filter(cityMovie -> cityMovie.getCity().getId().equals(cityId)).findFirst();
+        CityMovie cityMovie;
+        if (optionalCityMovie.isPresent()) {
+            cityMovie = optionalCityMovie.get();
+            Optional<TheatreMovie> optionalTheatreMovie = getExistingTheatreMovie(theatre, cityMovie);
+            if (optionalTheatreMovie.isEmpty()) {
+                cityMovie.getTheatreMovieList().add(getTheatreMovie(theatre, cityMovie));
+            }
+        } else {
+            cityMovie = new CityMovie();
+            cityMovie.setMovie(movie);
+            cityMovie.setCity(city);
+            cityMovie.getTheatreMovieList().add(getTheatreMovie(theatre, cityMovie));
+        }
+        cityMovieRepository.save(cityMovie);
+    }
+
+    private Optional<TheatreMovie> getExistingTheatreMovie(Theatre theatre, CityMovie cityMovie) {
+        Long theatreId = theatre.getId();
+        Optional<TheatreMovie> optionalTheatreMovie = cityMovie.getTheatreMovieList().stream().filter(theatreMovie -> theatreMovie.getTheatre().getId().equals(theatreId)).findFirst();
+        return optionalTheatreMovie;
+    }
+
+    /**
+     * Used to create link between Theatre and Movie
+     *
+     * @param theatre
+     * @param cityMovie
+     * @return
+     */
+    private TheatreMovie getTheatreMovie(Theatre theatre, CityMovie cityMovie) {
+        TheatreMovie theatreMovie = new TheatreMovie();
+        theatreMovie.setTheatre(theatre);
+        theatreMovie.setCityMovie(cityMovie);
+        return theatreMovie;
     }
 
     /**
@@ -112,10 +160,10 @@ public class TimeSlotService {
         ScreenMovie screenMovie = new ScreenMovie();
         List<ScreenTimeSlot> screenTimeSlots = getScreenTimeSlots(screenMovie, movieTimeSlotRequest);
 
+
         screenMovie.setScreen(screen);
         screenMovie.setMovie(movie);
         screenMovie.setSeatPrice(movieTimeSlotRequest.getSeatPrice());
-        screenMovie.setMovieLengthInMinutes(movieTimeSlotRequest.getMovieLengthInMinutes());
         screenMovie.getScreenTimeSlots().addAll(screenTimeSlots);
         return screenMovie;
     }
@@ -125,8 +173,7 @@ public class TimeSlotService {
      *
      * @param movieTimeSlotRequest
      */
-    private void validateMovieTimeSLotRequest(MovieTimeSlotRequest movieTimeSlotRequest) {
-        Short movieLengthInMinutes = movieTimeSlotRequest.getMovieLengthInMinutes();
+    private void validateMovieTimeSLotRequest(MovieTimeSlotRequest movieTimeSlotRequest, Short movieLengthInMinutes) {
         Map<Date, List<Time>> timeSLotsMap = movieTimeSlotRequest.getTimeSlots();
 
         timeSLotsMap.forEach((key, value) -> {
@@ -155,15 +202,15 @@ public class TimeSlotService {
      */
     private List<ScreenTimeSlot> getScreenTimeSlots(ScreenMovie screenMovie, MovieTimeSlotRequest movieTimeSlotRequest) {
         List<ScreenTimeSlot> screenTimeSlots = new ArrayList<>();
-        movieTimeSlotRequest.getTimeSlots().forEach((key, value) -> {
-            value.forEach(timeSlot -> {
-                ScreenTimeSlot screenTimeSlot = new ScreenTimeSlot();
-                screenTimeSlot.setDate(key);
-                screenTimeSlot.setStartTime(timeSlot);
-                screenTimeSlot.setScreenMovie(screenMovie);
-                screenTimeSlots.add(screenTimeSlot);
-            });
-        });
+        movieTimeSlotRequest.getTimeSlots().forEach((key, value) ->
+                value.forEach(timeSlot -> {
+                    ScreenTimeSlot screenTimeSlot = new ScreenTimeSlot();
+                    screenTimeSlot.setDate(key);
+                    screenTimeSlot.setStartTime(timeSlot);
+                    screenTimeSlot.setScreenMovie(screenMovie);
+                    screenTimeSlots.add(screenTimeSlot);
+                })
+        );
         if (screenTimeSlots.isEmpty())
             throw new BadRequestException("Invalid request to add movie to Screen without Time-Slots");
         return screenTimeSlots;

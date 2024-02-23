@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -24,4 +27,7 @@ public class CityMovie {
     @ManyToOne
     @JoinColumn(name = "city_id")
     private City city;
+
+    @OneToMany(mappedBy = "cityMovie",cascade = CascadeType.ALL)
+    private List<TheatreMovie> theatreMovieList = new ArrayList<>();
 }
