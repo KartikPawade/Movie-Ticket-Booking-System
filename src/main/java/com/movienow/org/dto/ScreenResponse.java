@@ -5,7 +5,4 @@ public interface ScreenResponse {
 
     String getScreenName();
 
-    Long getTheatreId();
-
-    Long getMovieId();
 }

@@ -42,9 +42,9 @@ public class TimeSlotService {
      * @param screenId
      * @return
      */
-    public Map<LocalDate, List<ScreenTimeSlotResponse>> getTimeSlots(Long screenId) {
-        screenRepository.findById(screenId).orElseThrow(() -> new NotFoundException("Screen not found for given Id."));
-        List<ScreenTimeSlotDetails> timeSlotDetails = screenTimeSlotRepository.getTimeSlots(screenId);
+    public Map<LocalDate, List<ScreenTimeSlotResponse>> getTimeSlots(Long movieId, Long screenId) {
+        ScreenMovie screenMovie =  screenMovieRepository.findByMovieIdAndScreenId(movieId,screenId).orElseThrow(()-> new BadRequestException("Invalid Request, either invalid movieId or ScreenId."));
+        List<ScreenTimeSlotDetails> timeSlotDetails = screenTimeSlotRepository.getTimeSlots(screenMovie.getId());
 
         return getTimeSlotResponseMap(timeSlotDetails);
     }

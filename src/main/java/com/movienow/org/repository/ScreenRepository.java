@@ -13,16 +13,14 @@ import java.util.Optional;
 
 @Repository
 public interface ScreenRepository extends JpaRepository<Screen, Long> {
-    @Query(value = "select s.id as screenId, s.name as screenName , t.id as theatreId, m.id as movieId from screen s " +
-            "join theatre t " +
-            "on s.theatre_id = theatre_id " +
-            "join city_movie cm " +
-            "on s.movie_city_id = cm.id " +
-            "join movie m " +
-            "on m.id = cm.movie_id " +
-            "where t.id = :theatreId and cm.id = :cityMovieId "
+    @Query(value = "select s.id as screenId,s.name as screenName from screen s " +
+            "join screen_movie sm " +
+            "on sm.screen_id = s.id " +
+            "where " +
+            "s.theatre_id = :theatreId " +
+            "and sm.movie_id = :movieId"
             , nativeQuery = true)
-    List<ScreenResponse> getScreens(@Param(value = "theatreId") Long theatreId, @Param(value = "cityMovieId") Long cityMovieId);
+    List<ScreenResponse> getScreens(@Param(value = "theatreId") Long theatreId, @Param(value = "movieId") Long movieId);
 
     List<Screen> findAllByTheatreAndNameIn(Theatre theatre, List<String> screenRequests);
 

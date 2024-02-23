@@ -15,9 +15,10 @@ public class TimeSlotController {
 
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/theatres/movies/screens/{screenId}/time-slots")
-    public ResponseEntity<Object> getTimeSlots(@PathVariable("screenId") final Long screenId) {
-        return ResponseEntity.ok().body(timeSlotService.getTimeSlots(screenId));
+    @GetMapping("/cities/theatres/movies/{movieId}/screens/{screenId}/time-slots")
+    public ResponseEntity<Object> getTimeSlots(@PathVariable("movieId") final Long movieId,
+                                               @PathVariable("screenId") final Long screenId) {
+        return ResponseEntity.ok().body(timeSlotService.getTimeSlots(movieId, screenId));
     }
 
 
@@ -26,6 +27,6 @@ public class TimeSlotController {
     public ResponseEntity<Object> addMovieToScreenWithTimeSlots(@PathVariable("movieId") final Long movieId,
                                                                 @PathVariable("screenId") final Long screenId,
                                                                 @RequestBody MovieTimeSlotRequest movieTimeSlotRequest) {
-        return ResponseEntity.ok().body(timeSlotService.addMovieToScreenWithTimeSlots(movieId,screenId,movieTimeSlotRequest));
+        return ResponseEntity.ok().body(timeSlotService.addMovieToScreenWithTimeSlots(movieId, screenId, movieTimeSlotRequest));
     }
 }

@@ -17,10 +17,10 @@ public class ScreenController {
     private ScreenService screenService;
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/theatres/{theatreId}/movies/{cityMovieId}/screens")
+    @GetMapping("/cities/theatres/{theatreId}/movies/{movieId}/screens")
     public ResponseEntity<Object> getScreens(@PathVariable(value = "theatreId") final Long theatreId,
-                                             @PathVariable(value = "cityMovieId") final Long cityMovieId) {
-        return ResponseEntity.ok().body(screenService.getScreens(theatreId, cityMovieId));
+                                             @PathVariable(value = "movieId") final Long movieId) {
+        return ResponseEntity.ok().body(screenService.getScreens(theatreId, movieId));
     }
 
     @PreAuthorize("hasAuthority('MANAGER')")
