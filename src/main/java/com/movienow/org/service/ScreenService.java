@@ -5,6 +5,7 @@ import com.movienow.org.dto.ScreenResponse;
 import com.movienow.org.dto.TheatreResponse;
 import com.movienow.org.entity.Screen;
 import com.movienow.org.entity.Theatre;
+import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.ScreenRepository;
 import com.movienow.org.repository.TheatreRepository;
@@ -41,6 +42,11 @@ public class ScreenService {
      */
     public String addScreens(Long theatreId, List<AddScreenRequest> screenRequests) {
         Theatre theatre = theatreRepository.findById(theatreId).orElseThrow(() -> new NotFoundException("Theatre not found with given Id."));
+        List<String> screenNames = screenRequests.stream().map(AddScreenRequest::getName).toList();
+        List<Screen> existScreens = screenRepository.findAllByTheatreAndNameIn(theatre, screenNames);
+        if (!existScreens.isEmpty()) {
+            throw new BadRequestException("Some of the requested Screens to be added already exist in the Theatre");
+        }
         List<Screen> screens = new ArrayList<>();
         screenRequests.forEach(addScreenRequest -> {
             Screen screen = new Screen();
