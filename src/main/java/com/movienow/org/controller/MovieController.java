@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/v1")
 public class MovieController {
@@ -28,7 +30,13 @@ public class MovieController {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/cities/theatres/movies")
-    public ResponseEntity<Object> addMovies(@RequestBody MovieRequest movieRequest) {
+    public ResponseEntity<Object> addMovie(@RequestBody MovieRequest movieRequest) {
         return ResponseEntity.ok().body(movieService.addMovie(movieRequest));
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/cities/theatres/movies/{movieId}")
+    public ResponseEntity<Object> addMovieToTheatres(@PathVariable(value = "movieId") final Long movieId, @RequestParam("theatreIds") List<Long> theatreIds) {
+        return ResponseEntity.ok().body(movieService.addMovieToTheatres(movieId, theatreIds));
     }
 }

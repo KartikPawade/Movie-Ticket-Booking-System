@@ -6,7 +6,7 @@ public  interface TheatreDetails {
 
     String getName();
 
-    Long getAddressId();
+//    Long getAddressId();
 
     String getArea();
 

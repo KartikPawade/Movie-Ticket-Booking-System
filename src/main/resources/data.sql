@@ -1,3 +1,7 @@
+INSERT INTO public.user_role (id, "role") VALUES(1, 'ADMIN');
+INSERT INTO public.user_role (id, "role") VALUES(2, 'MANAGER');
+INSERT INTO public.user_role (id, "role") VALUES(3, 'USER');
+
 INSERT INTO public.country (id, code, "name") VALUES(1, 'AD', 'Andorra');
 INSERT INTO public.country (id, code, "name") VALUES(2, 'AE', 'United Arab Emirates');
 INSERT INTO public.country (id, code, "name") VALUES(3, 'AF', 'Afghanistan');

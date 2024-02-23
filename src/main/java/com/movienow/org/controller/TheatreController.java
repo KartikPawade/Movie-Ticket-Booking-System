@@ -18,15 +18,11 @@ public class TheatreController {
     @Autowired
     private TheatreService theatreService;
 
-    /**
-     * 1. add theatre - ADMIN role
-     * 2. get all theatres by city
-     */
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping("/cities/theatres/add-theatre")
-    public ResponseEntity<Object> addTheatre(@RequestBody AddTheatreRequest addTheatreRequest) {
-        return ResponseEntity.ok().body(theatreService.addTheatre(addTheatreRequest));
+    @PostMapping("/cities/{cityId}/theatres/add-theatre")
+    public ResponseEntity<Object> addTheatre(@PathVariable(name = "cityId") final Long cityId, @RequestBody AddTheatreRequest addTheatreRequest) {
+        return ResponseEntity.ok().body(theatreService.addTheatre(cityId, addTheatreRequest));
     }
 
     @PreAuthorize("hasAuthority('USER')")

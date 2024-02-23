@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Theatre {
+public class ScreenMovie {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "screen_id")
+    private Screen screen;
 
-    private String address;
-
-    @OneToOne
-    @JoinColumn(name = "city_id")
-    private City city;
+    @ManyToOne
+    @JoinColumn(name = "movie_id")
+    private Movie movie;
 }

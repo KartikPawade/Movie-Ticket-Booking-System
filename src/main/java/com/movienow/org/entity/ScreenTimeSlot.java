@@ -24,8 +24,8 @@ public class ScreenTimeSlot {
 
     private Time startTime;
     @ManyToOne
-    @JoinColumn(name = "screen_id")
-    private Screen screen;
+    @JoinColumn(name = "screen_movie_id")
+    private ScreenMovie screenMovie;
 
     private Date date;
 }

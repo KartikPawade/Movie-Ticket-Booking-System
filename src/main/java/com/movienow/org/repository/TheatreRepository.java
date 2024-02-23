@@ -12,14 +12,14 @@ import java.util.List;
 @Repository
 public interface TheatreRepository extends JpaRepository<Theatre, Long> {
 
-    @Query(value = "select t.id, t.name, t.address_id as addressId, a.area, a.city_id as cityId, c.name as city from theatre t " +
-            "join address a " +
-            "on t.address_id = a.id " +
-            "join city c " +
-            "on a.city_id = c.id " +
-            " where a.city_id = :cityId "
-            , nativeQuery = true)
-    List<TheatreDetails> getTheatres(@Param(value = "cityId") Long cityId);
+//    @Query(value = "select t.id, t.name, t.address_id as addressId, a.area, a.city_id as cityId, c.name as city from theatre t " +
+//            "join address a " +
+//            "on t.address_id = a.id " +
+//            "join city c " +
+//            "on a.city_id = c.id " +
+//            " where a.city_id = :cityId "
+//            , nativeQuery = true)
+//    List<TheatreDetails> getTheatres(@Param(value = "cityId") Long cityId);
 
     @Query(value = "select t.id , t.name  from theatre t " +
             "join theatre_movie tm " +
