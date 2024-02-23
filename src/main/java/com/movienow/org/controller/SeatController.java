@@ -20,16 +20,18 @@ public class SeatController {
     @Autowired
     private SeatService seatService;
 
-    /**
-     * 1. Get all available seats for a timeslot selected for a day
-     *
-     * 2. (we need to block seats if seats are selected, at that time we perform a check so that same seat cant be booked by 2 persons)
-     */
 
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
     public ResponseEntity<Object> getSeats(@PathVariable("timeSlotId") final Long timeSlotId) {
         return ResponseEntity.ok().body(seatService.getSeats(timeSlotId));
+    }
+
+    @PreAuthorize("hasAuthority('MANAGER')")
+    @GetMapping("/cities/theatres/{theatreId}/screens/{screenId}/seats")
+    public ResponseEntity<Object> getAllSeats(@PathVariable("theatreId") final Long theatreId,
+                                           @PathVariable("screenId") final Long screenId) {
+        return ResponseEntity.ok().body(seatService.getSeats(theatreId,screenId));
     }
 
     @PreAuthorize("hasAuthority('USER')")
@@ -43,4 +45,6 @@ public class SeatController {
     public ResponseEntity<Object> doPayment(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody PaymentRequest paymentRequest) {
         return ResponseEntity.ok().body(seatService.doPayment(timeSlotId, paymentRequest));
     }
+
+
 }

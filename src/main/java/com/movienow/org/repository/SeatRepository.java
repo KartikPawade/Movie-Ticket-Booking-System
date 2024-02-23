@@ -17,4 +17,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
             "where tss.time_slot_id = :timeSlotId and tss.booked = 'N' "
             , nativeQuery = true)
     List<SeatResponse> getSeats(@Param(value = "timeSlotId") Long timeSlotId);
+
+    List<Seat> findAllByScreenId(Long screenId);
 }

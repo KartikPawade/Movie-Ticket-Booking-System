@@ -4,21 +4,13 @@ import com.movienow.org.dto.BookingResponse;
 import com.movienow.org.dto.EmailDetails;
 import com.movienow.org.dto.SeatResponse;
 import com.movienow.org.dto.UserBookingDetails;
-import com.movienow.org.entity.AppUser;
-import com.movienow.org.entity.BookingDetails;
-import com.movienow.org.entity.ScreenTimeSlot;
-import com.movienow.org.entity.TimeSlotSeat;
+import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
-import com.movienow.org.messaging.EmailConsumerService;
 import com.movienow.org.payment.PaymentGatewayService;
 import com.movienow.org.payment.PaymentRequest;
 import com.movienow.org.payment.PaymentResponse;
-import com.movienow.org.repository.BookingDetailsRepository;
-import com.movienow.org.repository.ScreenTimeSlotRepository;
-import com.movienow.org.repository.SeatRepository;
-import com.movienow.org.repository.SeatTimeSlotRepository;
-import com.movienow.org.repository.UserRepository;
+import com.movienow.org.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class SeatService {
@@ -48,6 +37,8 @@ public class SeatService {
     private PaymentGatewayService paymentGatewayService;
     @Autowired
     private BookingDetailsRepository bookingDetailsRepository;
+    @Autowired
+    private ScreenRepository screenRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -70,6 +61,20 @@ public class SeatService {
      */
     public List<SeatResponse> getSeats(Long timeSlotId) {
         return seatRepository.getSeats(timeSlotId);
+    }
+
+
+    /**
+     * Used to get seats for a Screen in Theatre
+     * @param theatreId
+     * @param screenId
+     * @return
+     */
+    public List<Seat> getSeats(Long theatreId, Long screenId) {
+        System.out.println("ksjd");
+        screenRepository.findByIdAndTheatreId(screenId, theatreId).orElseThrow(() -> new BadRequestException("ScreenId does not belong to theatreId."));
+
+        return seatRepository.findAllByScreenId(screenId);
     }
 
     /**
