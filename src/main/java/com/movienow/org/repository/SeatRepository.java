@@ -19,4 +19,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<SeatResponse> getSeats(@Param(value = "timeSlotId") Long timeSlotId);
 
     List<Seat> findAllByScreenId(Long screenId);
+
+    List<Seat> findAllByScreenIdAndSeatNumberIn(Long screenId, List<Short> seatIds);
 }

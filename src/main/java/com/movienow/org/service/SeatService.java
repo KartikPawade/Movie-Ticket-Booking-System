@@ -66,14 +66,13 @@ public class SeatService {
 
     /**
      * Used to get seats for a Screen in Theatre
+     *
      * @param theatreId
      * @param screenId
      * @return
      */
     public List<Seat> getSeats(Long theatreId, Long screenId) {
-        System.out.println("ksjd");
         screenRepository.findByIdAndTheatreId(screenId, theatreId).orElseThrow(() -> new BadRequestException("ScreenId does not belong to theatreId."));
-
         return seatRepository.findAllByScreenId(screenId);
     }
 
@@ -192,4 +191,39 @@ public class SeatService {
         bookingDetailsRepository.saveAll(bookingDetailsList);
     }
 
+    /**
+     * Used to add Seats to the Screen
+     *
+     * @param screenId
+     * @param startSeatNumber
+     * @param endSeatNumber
+     * @return
+     */
+    public String addSeats(Long screenId, Short startSeatNumber, Short endSeatNumber) {
+        if (endSeatNumber < startSeatNumber) throw new BadRequestException("Invalid Seats requested");
+        List<Short> seatIds = getSeatNumbers(startSeatNumber, endSeatNumber);
+
+        Screen screen = screenRepository.findById(screenId).orElseThrow(() -> new NotFoundException("Screen not found for given Id."));
+        List<Seat> existingSeats = seatRepository.findAllByScreenIdAndSeatNumberIn(screenId, seatIds);
+        if (!existingSeats.isEmpty()) {
+            throw new BadRequestException("Some of the requested Seats are already present in the Screen.");
+        }
+        List<Seat> seats = seatIds.stream().map(seatNumber -> {
+            Seat seat = new Seat();
+            seat.setSeatNumber(seatNumber);
+            seat.setScreen(screen);
+            return seat;
+        }).toList();
+
+        seatRepository.saveAll(seats);
+        return "Seats added Successfully";
+    }
+
+    private List<Short> getSeatNumbers(Short startSeatNumber, Short endSeatNumber) {
+        List<Short> seatNumbers = new ArrayList<>();
+        for (Short i = startSeatNumber; i <= endSeatNumber; i++) {
+            seatNumbers.add(i);
+        }
+        return seatNumbers;
+    }
 }
