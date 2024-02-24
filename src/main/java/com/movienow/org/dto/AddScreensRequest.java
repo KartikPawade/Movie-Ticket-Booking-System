@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TheatreResponse  {
+public class AddScreensRequest {
     private Long id;
-    private String name;
 }

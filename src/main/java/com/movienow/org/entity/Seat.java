@@ -26,7 +26,7 @@ public class Seat {
 
     private Short seatNumber;
 
-    private Double price;
+//    private Double price;
 
     @ManyToOne
     @JoinColumn(name = "screen_id")

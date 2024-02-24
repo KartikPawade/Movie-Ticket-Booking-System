@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddressRequest {
-    private String area;
-    private Long cityId;
+public class MovieRequest {
+    private String name;
 }

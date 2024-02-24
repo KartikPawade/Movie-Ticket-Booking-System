@@ -18,26 +18,22 @@ public class TheatreController {
     @Autowired
     private TheatreService theatreService;
 
-    /**
-     * 1. add theatre - ADMIN role
-     * 2. get all theatres by city
-     */
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping("/cities/theatres/add-theatre")
-    public ResponseEntity<Object> addTheatre(@RequestBody AddTheatreRequest addTheatreRequest) {
-        return ResponseEntity.ok().body(theatreService.addTheatre(addTheatreRequest));
+    @PostMapping("/cities/{cityId}/theatres/add-theatre")
+    public ResponseEntity<Object> addTheatre(@PathVariable(name = "cityId") final Long cityId, @RequestBody AddTheatreRequest addTheatreRequest) {
+        return ResponseEntity.ok().body(theatreService.addTheatre(cityId, addTheatreRequest));
     }
 
-    @PreAuthorize("hasAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER') or hasAuthority('MANAGER')")
     @GetMapping("/cities/{cityId}/theatres")
     public ResponseEntity<Object> getTheatres(@PathVariable("cityId") final Long cityId) {
         return ResponseEntity.ok().body(theatreService.getTheatres(cityId));
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/movies/{cityMovieId}/theatres")
-    public ResponseEntity<Object> getTheatresForMovieInCity(@PathVariable("cityMovieId") final Long cityMovieId) {
-        return ResponseEntity.ok().body(theatreService.getTheatresForMovie(cityMovieId));
+    @GetMapping("/cities/{cityId}/movies/{movieId}/theatres")
+    public ResponseEntity<Object> getTheatresForMovieInCity(@PathVariable("cityId") final Long cityId, @PathVariable("movieId") final Long movieId) {
+        return ResponseEntity.ok().body(theatreService.getTheatresForMovie(cityId, movieId));
     }
 }

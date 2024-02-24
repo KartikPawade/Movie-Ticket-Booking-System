@@ -1,7 +1,9 @@
 package com.movienow.org.dto;
 
-public interface MovieResponse {
+public  interface TheatreDetails {
+
     Long getId();
 
     String getName();
+
 }

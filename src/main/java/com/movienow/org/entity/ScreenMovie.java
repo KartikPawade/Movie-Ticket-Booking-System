@@ -13,21 +13,23 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_city_movie",columnNames = {"city_id","movie_id"})
+        @UniqueConstraint(name = "uk_screen_movie", columnNames = {"screen_id","movie_id"})
 })
-public class CityMovie {
+public class ScreenMovie {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "screen_id")
+    private Screen screen;
+
+    @ManyToOne
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
-    @ManyToOne
-    @JoinColumn(name = "city_id")
-    private City city;
+    private Short seatPrice;
 
-    @OneToMany(mappedBy = "cityMovie",cascade = CascadeType.ALL)
-    private List<TheatreMovie> theatreMovieList = new ArrayList<>();
+    @OneToMany(mappedBy = "screenMovie",cascade = CascadeType.ALL)
+    List<ScreenTimeSlot> screenTimeSlots = new ArrayList<>();
 }

@@ -1,7 +1,6 @@
 package com.movienow.org.repository;
 
-import com.movienow.org.dto.TheatreMovieResponse;
-import com.movienow.org.dto.TheatreResponse;
+import com.movienow.org.dto.TheatreDetails;
 import com.movienow.org.entity.Theatre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,23 +12,23 @@ import java.util.List;
 @Repository
 public interface TheatreRepository extends JpaRepository<Theatre, Long> {
 
-    @Query(value = "select t.id, t.name, t.address_id as addressId, a.area, a.city_id as cityId, c.name as city from theatre t " +
-            "join address a " +
-            "on t.address_id = a.id " +
+    @Query(value = "select t.id, t.name, t.address from theatre t " +
             "join city c " +
-            "on a.city_id = c.id " +
-            " where a.city_id = :cityId "
+            "on t.city_id = c.id " +
+            " where t.city_id = :cityId "
             , nativeQuery = true)
-    List<TheatreResponse> getTheatres(@Param(value = "cityId") Long cityId);
+    List<TheatreDetails> getTheatres(@Param(value = "cityId") Long cityId);
 
-    @Query(value = "select m.id as movieId, m.name as movieName, t.id as theatreId, t.name as theatreName from theatre t " +
+    @Query(value = "select t.id , t.name  from theatre t " +
             "join theatre_movie tm " +
             "on t.id = tm.theatre_id " +
             "join city_movie cm " +
             "on cm.id = tm.city_movie_id " +
             "join movie m " +
             "on m.id = cm.movie_id " +
-            "where cm.id = :cityMovieId "
+            "join city c  " +
+            "on c.id = cm.city_id " +
+            "where c.id =:cityId and m.id =:movieId "
             , nativeQuery = true)
-    List<TheatreMovieResponse> getTheatresForMovieInCity(@Param(value = "cityMovieId") Long cityMovieId);
+    List<TheatreDetails> getTheatresForMovieInCity(@Param(value = "movieId") Long movieId, @Param(value = "cityId") Long cityId);
 }

@@ -4,21 +4,13 @@ import com.movienow.org.dto.BookingResponse;
 import com.movienow.org.dto.EmailDetails;
 import com.movienow.org.dto.SeatResponse;
 import com.movienow.org.dto.UserBookingDetails;
-import com.movienow.org.entity.AppUser;
-import com.movienow.org.entity.BookingDetails;
-import com.movienow.org.entity.ScreenTimeSlot;
-import com.movienow.org.entity.TimeSlotSeat;
+import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
-import com.movienow.org.messaging.EmailConsumerService;
 import com.movienow.org.payment.PaymentGatewayService;
 import com.movienow.org.payment.PaymentRequest;
 import com.movienow.org.payment.PaymentResponse;
-import com.movienow.org.repository.BookingDetailsRepository;
-import com.movienow.org.repository.ScreenTimeSlotRepository;
-import com.movienow.org.repository.SeatRepository;
-import com.movienow.org.repository.SeatTimeSlotRepository;
-import com.movienow.org.repository.UserRepository;
+import com.movienow.org.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class SeatService {
@@ -48,6 +37,8 @@ public class SeatService {
     private PaymentGatewayService paymentGatewayService;
     @Autowired
     private BookingDetailsRepository bookingDetailsRepository;
+    @Autowired
+    private ScreenRepository screenRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -69,7 +60,21 @@ public class SeatService {
      * @return
      */
     public List<SeatResponse> getSeats(Long timeSlotId) {
+        screenTimeSlotRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Movie Time Slot does not exist for given Id."));
         return seatRepository.getSeats(timeSlotId);
+    }
+
+
+    /**
+     * Used to get seats for a Screen in Theatre
+     *
+     * @param theatreId
+     * @param screenId
+     * @return
+     */
+    public List<Seat> getSeats(Long theatreId, Long screenId) {
+        screenRepository.findByIdAndTheatreId(screenId, theatreId).orElseThrow(() -> new BadRequestException("ScreenId does not belong to theatreId."));
+        return seatRepository.findAllByScreenId(screenId);
     }
 
     /**
@@ -78,14 +83,14 @@ public class SeatService {
      * @param timeSlotId
      * @return
      */
-    public Object bookSeats(Long timeSlotId, List<Long> seatIds) {
-        List<BookingResponse> bookingResponses = screenTimeSlotRepository.getSeats(timeSlotId, seatIds);
+    public String bookSeats(Long timeSlotId, List<Long> seatIds) {
+        List<BookingResponse> bookingResponses = seatRepository.getSeats(timeSlotId, seatIds);
         if (bookingResponses.size() != seatIds.size())
             throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
 
         for (Long seatId : seatIds) {
             if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
-                throw new BadRequestException("Requested seats are booked by someone.");
+                throw new BadRequestException("Some of requested seats are being booked by someone else.");
             }
         }
 
@@ -113,7 +118,7 @@ public class SeatService {
     private UserBookingDetails getUserBokkingDetails(BookingResponse bookingResponse) {
         UserBookingDetails userBookingDetails = new UserBookingDetails();
         userBookingDetails.setSeatId(bookingResponse.getSeatId());
-        userBookingDetails.setPrice(bookingResponse.getPrice());
+        userBookingDetails.setPrice(bookingResponse.getSeatPrice());
         return userBookingDetails;
     }
 
@@ -125,6 +130,12 @@ public class SeatService {
      */
     @Transactional
     public String doPayment(Long timeSlotId, PaymentRequest paymentRequest) {
+        ScreenTimeSlot timeSlot = screenTimeSlotRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Time Slot not found with given Id."));
+        List<Seat> seats = seatRepository.findAllById(paymentRequest.getSeatIds());
+        if (seats.size() != paymentRequest.getSeatIds().size()) {
+            throw new BadRequestException("Invalid Seat Ids for Checkout request.");
+        }
+
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userDetails.getUsername();
         Double totalPrice = (double) 0;
@@ -144,14 +155,21 @@ public class SeatService {
 
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
-            savePaymentDetails(paymentResponse, userDetails, timeSlotId, seatIds, totalPrice);
+            savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
         }
         EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
         rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
         return "Payment Successful";
     }
 
-
+    /**
+     * Used to get Email Details
+     *
+     * @param userName
+     * @param totalPrice
+     * @param seatIds
+     * @return
+     */
     private EmailDetails getEmailDetails(String userName, Double totalPrice, Set<Long> seatIds) {
         return new EmailDetails(userName, totalPrice, new ArrayList<>(seatIds));
     }
@@ -162,29 +180,86 @@ public class SeatService {
      *
      * @param paymentResponse
      * @param userDetails
-     * @param timeSlotId
-     * @param seatIds
+     * @param timeSlot
+     * @param seats
      * @param totalPrice
      */
-    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, Long timeSlotId, Set<Long> seatIds, Double totalPrice) {
+    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, ScreenTimeSlot timeSlot, List<Seat> seats, Double totalPrice) {
         List<BookingDetails> bookingDetailsList = new ArrayList<>();
         AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));
-        List<TimeSlotSeat> timeSlotSeats = seatTimeSlotRepository.findAllTimeSlotSeatRecords(timeSlotId, seatIds);
-        ScreenTimeSlot timeSlot = new ScreenTimeSlot();
-        if (!timeSlotSeats.isEmpty()) timeSlot = timeSlotSeats.get(0).getTimeSlot();
-        String chargeId = paymentResponse.getChargeId();
-        ScreenTimeSlot finalTimeSlot = timeSlot;
-        timeSlotSeats.forEach(timeSlotSeat -> {
-            timeSlotSeat.setBooked('Y');
-            BookingDetails bookingDetails = new BookingDetails();
-            bookingDetails.setUser(user);
-            bookingDetails.setTotalBookingPrice(totalPrice);
-            bookingDetails.getSeatTimeSlots().add(timeSlotSeat);
-            bookingDetails.setTimeSlot(finalTimeSlot);
-            bookingDetails.setChargeId(chargeId);
-            bookingDetailsList.add(bookingDetails);
+
+        seats.forEach(seat -> {
+            TimeSlotSeat timeSlotSeat = getTimeSlotSeat(timeSlot, seat);
+            bookingDetailsList.add(getBookingDetails(paymentResponse, totalPrice, user, timeSlotSeat));
         });
         bookingDetailsRepository.saveAll(bookingDetailsList);
     }
 
+    /**
+     * Used to create Booking Details
+     *
+     * @param paymentResponse
+     * @param totalPrice
+     * @param user
+     * @param timeSlotSeat
+     * @return
+     */
+    private static BookingDetails getBookingDetails(PaymentResponse paymentResponse, Double totalPrice, AppUser user, TimeSlotSeat timeSlotSeat) {
+        BookingDetails bookingDetails = new BookingDetails();
+        bookingDetails.setUser(user);
+        bookingDetails.setTotalBookingPrice(totalPrice);
+        bookingDetails.getSeatTimeSlots().add(timeSlotSeat);
+        bookingDetails.setChargeId(paymentResponse.getChargeId());
+        return bookingDetails;
+    }
+
+    /**
+     * Used to create link for Movie-time and Seat
+     *
+     * @param timeSlot
+     * @param seat
+     * @return
+     */
+    private static TimeSlotSeat getTimeSlotSeat(ScreenTimeSlot timeSlot, Seat seat) {
+        TimeSlotSeat timeSlotSeat = new TimeSlotSeat();
+        timeSlotSeat.setSeat(seat);
+        timeSlotSeat.setTimeSlot(timeSlot);
+        return timeSlotSeat;
+    }
+
+    /**
+     * Used to add Seats to the Screen
+     *
+     * @param screenId
+     * @param startSeatNumber
+     * @param endSeatNumber
+     * @return
+     */
+    public String addSeats(Long screenId, Short startSeatNumber, Short endSeatNumber) {
+        if (endSeatNumber < startSeatNumber) throw new BadRequestException("Invalid Seats requested");
+        List<Short> seatIds = getSeatNumbers(startSeatNumber, endSeatNumber);
+
+        Screen screen = screenRepository.findById(screenId).orElseThrow(() -> new NotFoundException("Screen not found for given Id."));
+        List<Seat> existingSeats = seatRepository.findAllByScreenIdAndSeatNumberIn(screenId, seatIds);
+        if (!existingSeats.isEmpty()) {
+            throw new BadRequestException("Some of the requested Seats are already present in the Screen.");
+        }
+        List<Seat> seats = seatIds.stream().map(seatNumber -> {
+            Seat seat = new Seat();
+            seat.setSeatNumber(seatNumber);
+            seat.setScreen(screen);
+            return seat;
+        }).toList();
+
+        seatRepository.saveAll(seats);
+        return "Seats added Successfully";
+    }
+
+    private List<Short> getSeatNumbers(Short startSeatNumber, Short endSeatNumber) {
+        List<Short> seatNumbers = new ArrayList<>();
+        for (Short i = startSeatNumber; i <= endSeatNumber; i++) {
+            seatNumbers.add(i);
+        }
+        return seatNumbers;
+    }
 }
