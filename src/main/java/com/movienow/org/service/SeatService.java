@@ -60,6 +60,7 @@ public class SeatService {
      * @return
      */
     public List<SeatResponse> getSeats(Long timeSlotId) {
+        screenTimeSlotRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Movie Time Slot does not exist for given Id."));
         return seatRepository.getSeats(timeSlotId);
     }
 
@@ -82,14 +83,14 @@ public class SeatService {
      * @param timeSlotId
      * @return
      */
-    public Object bookSeats(Long timeSlotId, List<Long> seatIds) {
-        List<BookingResponse> bookingResponses = screenTimeSlotRepository.getSeats(timeSlotId, seatIds);
+    public String bookSeats(Long timeSlotId, List<Long> seatIds) {
+        List<BookingResponse> bookingResponses = seatRepository.getSeats(timeSlotId, seatIds);
         if (bookingResponses.size() != seatIds.size())
             throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
 
         for (Long seatId : seatIds) {
             if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
-                throw new BadRequestException("Requested seats are booked by someone.");
+                throw new BadRequestException("Some of requested seats are being booked by someone else.");
             }
         }
 
@@ -117,7 +118,7 @@ public class SeatService {
     private UserBookingDetails getUserBokkingDetails(BookingResponse bookingResponse) {
         UserBookingDetails userBookingDetails = new UserBookingDetails();
         userBookingDetails.setSeatId(bookingResponse.getSeatId());
-        userBookingDetails.setPrice(bookingResponse.getPrice());
+        userBookingDetails.setPrice(bookingResponse.getSeatPrice());
         return userBookingDetails;
     }
 
@@ -129,6 +130,12 @@ public class SeatService {
      */
     @Transactional
     public String doPayment(Long timeSlotId, PaymentRequest paymentRequest) {
+        ScreenTimeSlot timeSlot = screenTimeSlotRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Time Slot not found with given Id."));
+        List<Seat> seats = seatRepository.findAllById(paymentRequest.getSeatIds());
+        if (seats.size() != paymentRequest.getSeatIds().size()) {
+            throw new BadRequestException("Invalid Seat Ids for Checkout request.");
+        }
+
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userDetails.getUsername();
         Double totalPrice = (double) 0;
@@ -148,14 +155,21 @@ public class SeatService {
 
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
-            savePaymentDetails(paymentResponse, userDetails, timeSlotId, seatIds, totalPrice);
+            savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
         }
         EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
         rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
         return "Payment Successful";
     }
 
-
+    /**
+     * Used to get Email Details
+     *
+     * @param userName
+     * @param totalPrice
+     * @param seatIds
+     * @return
+     */
     private EmailDetails getEmailDetails(String userName, Double totalPrice, Set<Long> seatIds) {
         return new EmailDetails(userName, totalPrice, new ArrayList<>(seatIds));
     }
@@ -166,29 +180,51 @@ public class SeatService {
      *
      * @param paymentResponse
      * @param userDetails
-     * @param timeSlotId
-     * @param seatIds
+     * @param timeSlot
+     * @param seats
      * @param totalPrice
      */
-    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, Long timeSlotId, Set<Long> seatIds, Double totalPrice) {
+    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, ScreenTimeSlot timeSlot, List<Seat> seats, Double totalPrice) {
         List<BookingDetails> bookingDetailsList = new ArrayList<>();
         AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));
-        List<TimeSlotSeat> timeSlotSeats = seatTimeSlotRepository.findAllTimeSlotSeatRecords(timeSlotId, seatIds);
-        ScreenTimeSlot timeSlot = new ScreenTimeSlot();
-        if (!timeSlotSeats.isEmpty()) timeSlot = timeSlotSeats.get(0).getTimeSlot();
-        String chargeId = paymentResponse.getChargeId();
-        ScreenTimeSlot finalTimeSlot = timeSlot;
-        timeSlotSeats.forEach(timeSlotSeat -> {
-            timeSlotSeat.setBooked('Y');
-            BookingDetails bookingDetails = new BookingDetails();
-            bookingDetails.setUser(user);
-            bookingDetails.setTotalBookingPrice(totalPrice);
-            bookingDetails.getSeatTimeSlots().add(timeSlotSeat);
-            bookingDetails.setTimeSlot(finalTimeSlot);
-            bookingDetails.setChargeId(chargeId);
-            bookingDetailsList.add(bookingDetails);
+
+        seats.forEach(seat -> {
+            TimeSlotSeat timeSlotSeat = getTimeSlotSeat(timeSlot, seat);
+            bookingDetailsList.add(getBookingDetails(paymentResponse, totalPrice, user, timeSlotSeat));
         });
         bookingDetailsRepository.saveAll(bookingDetailsList);
+    }
+
+    /**
+     * Used to create Booking Details
+     *
+     * @param paymentResponse
+     * @param totalPrice
+     * @param user
+     * @param timeSlotSeat
+     * @return
+     */
+    private static BookingDetails getBookingDetails(PaymentResponse paymentResponse, Double totalPrice, AppUser user, TimeSlotSeat timeSlotSeat) {
+        BookingDetails bookingDetails = new BookingDetails();
+        bookingDetails.setUser(user);
+        bookingDetails.setTotalBookingPrice(totalPrice);
+        bookingDetails.getSeatTimeSlots().add(timeSlotSeat);
+        bookingDetails.setChargeId(paymentResponse.getChargeId());
+        return bookingDetails;
+    }
+
+    /**
+     * Used to create link for Movie-time and Seat
+     *
+     * @param timeSlot
+     * @param seat
+     * @return
+     */
+    private static TimeSlotSeat getTimeSlotSeat(ScreenTimeSlot timeSlot, Seat seat) {
+        TimeSlotSeat timeSlotSeat = new TimeSlotSeat();
+        timeSlotSeat.setSeat(seat);
+        timeSlotSeat.setTimeSlot(timeSlot);
+        return timeSlotSeat;
     }
 
     /**

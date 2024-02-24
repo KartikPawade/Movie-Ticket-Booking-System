@@ -17,6 +17,12 @@ class PaymentProviderServiceServiceImpl implements PaymentProviderService<Paymen
     @Autowired
     private ApplicationContext applicationContext;
 
+    /**
+     * Used to get Payment Provider Service based on request
+     *
+     * @param paymentProviderType
+     * @return
+     */
     @Override
     @SuppressWarnings(value = "rawtypes")
     public PaymentService getProvider(PaymentProviderType paymentProviderType) {

@@ -32,5 +32,4 @@ public class TimeSlotSeat {
     @JoinColumn(name = "seat_id")
     private Seat seat;
 
-    private Character booked;
 }

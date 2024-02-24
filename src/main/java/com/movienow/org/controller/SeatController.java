@@ -15,7 +15,6 @@ public class SeatController {
     @Autowired
     private SeatService seatService;
 
-
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
     public ResponseEntity<Object> getSeats(@PathVariable("timeSlotId") final Long timeSlotId) {
@@ -36,7 +35,6 @@ public class SeatController {
                                            @RequestParam(name = "endSeatNumber") Short endSeatNumber) {
         return ResponseEntity.ok().body(seatService.addSeats(screenId, startSeatNumber,endSeatNumber));
     }
-
 
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
