@@ -25,6 +25,12 @@ public class ScreenController {
 
     @PreAuthorize("hasAuthority('MANAGER')")
     @GetMapping("/cities/theatres/{theatreId}/screens")
+    public ResponseEntity<Object> getScreens(@PathVariable(value = "theatreId") final Long theatreId) {
+        return ResponseEntity.ok().body(screenService.getScreens(theatreId));
+    }
+
+    @PreAuthorize("hasAuthority('MANAGER')")
+    @PostMapping("/cities/theatres/{theatreId}/screens")
     public ResponseEntity<Object> addScreens(@PathVariable(value = "theatreId") final Long theatreId,
                                              @RequestBody List<AddScreenRequest> screenRequests) {
         return ResponseEntity.ok().body(screenService.addScreens(theatreId, screenRequests));
