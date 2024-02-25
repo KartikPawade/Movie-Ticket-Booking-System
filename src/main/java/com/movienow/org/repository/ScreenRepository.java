@@ -25,4 +25,6 @@ public interface ScreenRepository extends JpaRepository<Screen, Long> {
     List<Screen> findAllByTheatreAndNameIn(Theatre theatre, List<String> screenRequests);
 
     Optional<Screen> findByIdAndTheatreId(Long id, Long theatreId);
+
+    List<Screen> findAllByTheatreId(Long theatreId);
 }

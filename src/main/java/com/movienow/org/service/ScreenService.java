@@ -1,6 +1,7 @@
 package com.movienow.org.service;
 
 import com.movienow.org.dto.AddScreenRequest;
+import com.movienow.org.dto.ScreenDetailsDto;
 import com.movienow.org.dto.ScreenResponse;
 import com.movienow.org.dto.TheatreResponse;
 import com.movienow.org.entity.Screen;
@@ -33,9 +34,34 @@ public class ScreenService {
      * @return
      */
     public List<ScreenResponse> getScreens(Long theatreId, Long movieId) {
-        theatreRepository.findById(theatreId).orElseThrow(()-> new NotFoundException("Theatre not found for given Id."));
-        movieRepository.findById(movieId).orElseThrow(()-> new NotFoundException("Movie not found for given Id."));
+        theatreRepository.findById(theatreId).orElseThrow(() -> new NotFoundException("Theatre not found for given Id."));
+        movieRepository.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found for given Id."));
         return screenRepository.getScreens(theatreId, movieId);
+    }
+
+    /**
+     * Used to get all Screen for a Theatre
+     *
+     * @param theatreId
+     * @return
+     */
+    public List<ScreenDetailsDto> getScreens(Long theatreId) {
+        theatreRepository.findById(theatreId).orElseThrow(() -> new NotFoundException("Theatre not found for given Id."));
+        List<Screen> screens = screenRepository.findAllByTheatreId(theatreId);
+        return screens.stream().map(this::getScreenDetails).toList();
+    }
+
+    /**
+     * Used to get ScreenDetails
+     *
+     * @param screen
+     * @return
+     */
+    private ScreenDetailsDto getScreenDetails(Screen screen) {
+        ScreenDetailsDto screenDetails = new ScreenDetailsDto();
+        screenDetails.setId(screen.getId());
+        screenDetails.setName(screen.getName());
+        return screenDetails;
     }
 
     /**
