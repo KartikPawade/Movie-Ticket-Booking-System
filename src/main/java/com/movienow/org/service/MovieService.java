@@ -2,17 +2,12 @@ package com.movienow.org.service;
 
 import com.movienow.org.dto.MovieRequest;
 import com.movienow.org.dto.MovieResponse;
-import com.movienow.org.dto.TheatreMovieResponse;
 import com.movienow.org.entity.Movie;
-import com.movienow.org.entity.Theatre;
-import com.movienow.org.entity.TheatreMovie;
-import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

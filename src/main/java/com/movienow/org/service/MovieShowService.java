@@ -149,20 +149,6 @@ public class MovieShowService {
     }
 
     /**
-     * Used to create link between Theatre and Movie
-     *
-     * @param theatre
-     * @param cityMovie
-     * @return
-     */
-    private TheatreMovie getTheatreMovie(Theatre theatre, CityMovie cityMovie) {
-        TheatreMovie theatreMovie = new TheatreMovie();
-        theatreMovie.setTheatre(theatre);
-        theatreMovie.setCityMovie(cityMovie);
-        return theatreMovie;
-    }
-
-    /**
      * Used to create Screen-Movie Link Record
      *
      * @param movieShowDetailsRequest

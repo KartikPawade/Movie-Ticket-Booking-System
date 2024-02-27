@@ -17,8 +17,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uK_show_seat", columnNames = {"show_id", "seat_id"}),
-        @UniqueConstraint(name = "uk_user_show_seat", columnNames = {"show_id", "seat_id","user_id"})
+        @UniqueConstraint(name = "uK_show_seat", columnNames = {"show_id", "seat_id"})
 })
 public class BookingDetails {
     @Id
@@ -32,12 +31,6 @@ public class BookingDetails {
     @ManyToOne
     @JoinColumn(name = "seat_id")
     private Seat seat;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    AppUser user;
-
-    private Double seatPrice;
 
     @ManyToOne
     @JoinColumn(name = "payment_details_id")

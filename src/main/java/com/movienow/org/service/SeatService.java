@@ -34,7 +34,7 @@ public class SeatService {
     @Autowired
     private PaymentGatewayService paymentGatewayService;
     @Autowired
-    private BookingDetailsRepository bookingDetailsRepository;
+    private PaymentDetailsRepository paymentDetailsRepository;
     @Autowired
     private ScreenRepository screenRepository;
     @Autowired
@@ -152,8 +152,8 @@ public class SeatService {
      * @return
      */
     @Transactional
-    public String doPayment(Long timeSlotId, PaymentRequest paymentRequest) {
-        Show timeSlot = movieShowRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Time Slot not found with given Id."));
+    public String doPayment(Long showId, PaymentRequest paymentRequest) {
+        Show timeSlot = movieShowRepository.findById(showId).orElseThrow(() -> new NotFoundException("Movie Show not found with given Id."));
         List<Seat> seats = seatRepository.findAllById(paymentRequest.getSeatIds());
         if (seats.size() != paymentRequest.getSeatIds().size()) {
             throw new BadRequestException("Invalid Seat Ids for Checkout request.");
@@ -177,9 +177,9 @@ public class SeatService {
         }
 
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
-//        if (paymentResponse != null && paymentResponse.getChargeId() != null) {
-//            savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
-//        }
+        if (paymentResponse != null && paymentResponse.getChargeId() != null) {
+            savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
+        }
         EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
         rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
         return "Payment Successful";
@@ -198,57 +198,45 @@ public class SeatService {
     }
 
 
-//    /**
-//     * Used to persists Payment and Booking details, after successfully charging the client
-//     *
-//     * @param paymentResponse
-//     * @param userDetails
-//     * @param timeSlot
-//     * @param seats
-//     * @param totalPrice
-//     */
-//    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, ScreenTimeSlot timeSlot, List<Seat> seats, Double totalPrice) {
-//        List<BookingDetails> bookingDetailsList = new ArrayList<>();
-//        AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));
-//
-//        seats.forEach(seat -> {
-//            BookingDetails bookingDetails = getTimeSlotSeat(timeSlot, seat);
-//            bookingDetailsList.add(getBookingDetails(paymentResponse, totalPrice, user, bookingDetails));
-//        });
-//        bookingDetailsRepository.saveAll(bookingDetailsList);
-//    }
+    /**
+     * Used to persists Payment and Booking details, after successfully charging the client
+     *
+     * @param paymentResponse
+     * @param userDetails
+     * @param show
+     * @param seats
+     * @param totalPrice
+     */
+    private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, Show show, List<Seat> seats, Double totalPrice) {
+        List<BookingDetails> bookingDetailsList = new ArrayList<>();
+        AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));
 
-//    /**
-//     * Used to create Booking Details
-//     *
-//     * @param paymentResponse
-//     * @param totalPrice
-//     * @param user
-//     * @param timeSlotSeat
-//     * @return
-//     */
-//    private static BookingDetails getBookingDetails(PaymentResponse paymentResponse, Double totalPrice, AppUser user, BookingDetails timeSlotSeat) {
-//        BookingDetails bookingDetails = new BookingDetails();
-//        bookingDetails.setUser(user);
-//        bookingDetails.setTotalBookingPrice(totalPrice);
-//        bookingDetails.getSeatTimeSlots().add(timeSlotSeat);
-//        bookingDetails.setChargeId(paymentResponse.getChargeId());
-//        return bookingDetails;
-//    }
-//
-//    /**
-//     * Used to create link for Movie-time and Seat
-//     *
-//     * @param timeSlot
-//     * @param seat
-//     * @return
-//     */
-//    private static BookingDetails getTimeSlotSeat(ScreenTimeSlot timeSlot, Seat seat) {
-//        BookingDetails bookingDetails = new BookingDetails();
-//        bookingDetails.setSeat(seat);
-//        bookingDetails.setShow(timeSlot);
-//        return bookingDetails;
-//    }
+        PaymentDetails paymentDetails = new PaymentDetails();
+        paymentDetails.setChargeId(paymentResponse.getChargeId());
+        paymentDetails.setTotalBookingPrice(totalPrice);
+        paymentDetails.setUser(user);
+
+        seats.forEach(seat -> {
+            paymentDetails.getBookingDetails().add(getTimeSlotSeat(show, seat, paymentDetails));
+        });
+        paymentDetailsRepository.save(paymentDetails);
+    }
+
+    /**
+     * Used to create link for Movie-time and Seat
+     *
+     * @param show
+     * @param seat
+     * @param paymentDetails
+     * @return
+     */
+    private static BookingDetails getTimeSlotSeat(Show show, Seat seat, PaymentDetails paymentDetails) {
+        BookingDetails bookingDetails = new BookingDetails();
+        bookingDetails.setSeat(seat);
+        bookingDetails.setShow(show);
+        bookingDetails.setPaymentDetails(paymentDetails);
+        return bookingDetails;
+    }
 
     /**
      * Used to add Seats to the Screen

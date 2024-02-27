@@ -47,5 +47,4 @@ public class SeatController {
     public ResponseEntity<Object> doPayment(@PathVariable("showId") final Long showId, @RequestBody PaymentRequest paymentRequest) {
         return ResponseEntity.ok().body(seatService.doPayment(showId, paymentRequest));
     }
-
 }
