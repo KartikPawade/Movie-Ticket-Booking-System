@@ -17,8 +17,8 @@ import java.sql.Time;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.TemporalAmount;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Validated
@@ -96,7 +96,7 @@ public class MovieShowService {
         });
 
         List<Show> movieShows = getShowDetails(movieShowDetailsRequest, screen, movie);
-        addMovieToCity(screen, movie);
+        addMovieToCity(screen, movie,movieShowDetailsRequest.getTimeSlots().keySet());
 
         screenMovieRepository.saveAll(movieShows);
         return "Movie Show Details successfully added to Screen";
@@ -131,8 +131,17 @@ public class MovieShowService {
      *
      * @param screen
      * @param movie
+     * @param showRequestdates
      */
-    private void addMovieToCity(Screen screen, Movie movie) {
+    private void addMovieToCity(Screen screen, Movie movie, Set<Date> showRequestdates) {
+        Date lastAvalibleMovieDate = null;
+        for(Date sh : showRequestdates){
+            if (lastAvalibleMovieDate == null) {
+                lastAvalibleMovieDate = sh;
+            } else if (sh.compareTo(lastAvalibleMovieDate) > 0) {
+                lastAvalibleMovieDate = sh;
+            }
+        }
         Theatre theatre = screen.getTheatre();
         City city = theatre.getCity();
         Long cityId = city.getId();
@@ -143,8 +152,14 @@ public class MovieShowService {
             cityMovie = new CityMovie();
             cityMovie.setMovie(movie);
             cityMovie.setCity(city);
-
+            cityMovie.setAvailableTillDate(lastAvalibleMovieDate);
             cityMovieRepository.save(cityMovie);
+        }else {
+            cityMovie = optionalCityMovie.get();
+            if(cityMovie.getAvailableTillDate().compareTo(lastAvalibleMovieDate)<0){
+                cityMovie.setAvailableTillDate(lastAvalibleMovieDate);
+                cityMovieRepository.save(cityMovie);
+            }
         }
     }
 
@@ -195,10 +210,10 @@ public class MovieShowService {
      */
     private Set<Date> validateMovieShowRequest(MovieShowDetailsRequest movieShowDetailsRequest, Short movieLengthInMinutes) {
         Map<Date, List<Time>> timeSLotsMap = movieShowDetailsRequest.getTimeSlots();
-
         timeSLotsMap.forEach((key, value) -> {
             if (value.isEmpty())
                 throw new BadRequestException("Invalid request to add ZERO time-slots for given Date.");
+
             int noOfShowPerDay = value.size();
             Time prevShowTime = value.get(0);
             for (int i = 1; i < noOfShowPerDay; i++) {

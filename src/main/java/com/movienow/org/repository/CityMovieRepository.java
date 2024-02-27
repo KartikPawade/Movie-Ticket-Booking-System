@@ -18,7 +18,7 @@ public interface CityMovieRepository extends JpaRepository<CityMovie, Long> {
             "on ci.id = cm.city_id " +
             "join movie mo " +
             "on mo.id = cm.movie_id " +
-            "where ci.id = :cityId "
+            "where ci.id = :cityId and cm.available_till_date > current_date"
             , nativeQuery = true)
     List<MovieResponse> getMovies(@Param(value = "cityId") Long cityId);
 }
