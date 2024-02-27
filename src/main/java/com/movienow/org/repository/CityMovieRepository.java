@@ -21,17 +21,4 @@ public interface CityMovieRepository extends JpaRepository<CityMovie, Long> {
             "where ci.id = :cityId "
             , nativeQuery = true)
     List<MovieResponse> getMovies(@Param(value = "cityId") Long cityId);
-
-
-    @Query(value = "select m.id as movieId, m.name as movieName from movie m " +
-            "join city_movie cm " +
-            "on cm.movie_id = m.id " +
-            "join theatre_movie tm " +
-            "on cm.id = tm.city_movie_id " +
-            "join theatre t " +
-            "on t.id = tm.theatre_id " +
-            "where cm.city_id = t.city_id " +
-            "and  t.id = :theatreId"
-            , nativeQuery = true)
-    List<TheatreMovieResponse> getAllMovies(@Param("theatreId") Long theatreId);
 }

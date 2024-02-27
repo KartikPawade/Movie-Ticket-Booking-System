@@ -13,19 +13,13 @@ public class MovieShowController {
     @Autowired
     private MovieShowService movieShowService;
 
-//    @PreAuthorize("hasAuthority('USER')")
-//    @GetMapping("/cities/theatres/movies/{movieId}/screens/{screenId}/time-slots")
-//    public ResponseEntity<Object> getTimeSlots(@PathVariable("movieId") final Long movieId,
-//                                               @PathVariable("screenId") final Long screenId) {
-//        return ResponseEntity.ok().body(movieShowService.getTimeSlots(movieId, screenId));
-//    }
-
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/cities/{cityId}/theatres/movies/{movieId}/shows")
     public ResponseEntity<Object> getAllShows(@PathVariable("cityId") final Long cityId,
                                               @PathVariable("movieId") final Long movieId) {
         return ResponseEntity.ok().body(movieShowService.getAllShows(cityId, movieId));
     }
+
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/cities/theatres/{theatreId}/movies/shows")
     public ResponseEntity<Object> getAllShows(@PathVariable("theatreId") final Long theatreId){

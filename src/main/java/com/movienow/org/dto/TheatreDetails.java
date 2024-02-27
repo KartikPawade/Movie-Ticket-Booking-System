@@ -5,5 +5,4 @@ public  interface TheatreDetails {
     Long getId();
 
     String getName();
-
 }

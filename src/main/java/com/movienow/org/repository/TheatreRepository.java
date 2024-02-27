@@ -18,17 +18,4 @@ public interface TheatreRepository extends JpaRepository<Theatre, Long> {
             " where t.city_id = :cityId "
             , nativeQuery = true)
     List<TheatreDetails> getTheatres(@Param(value = "cityId") Long cityId);
-
-    @Query(value = "select t.id , t.name  from theatre t " +
-            "join theatre_movie tm " +
-            "on t.id = tm.theatre_id " +
-            "join city_movie cm " +
-            "on cm.id = tm.city_movie_id " +
-            "join movie m " +
-            "on m.id = cm.movie_id " +
-            "join city c  " +
-            "on c.id = cm.city_id " +
-            "where c.id =:cityId and m.id =:movieId "
-            , nativeQuery = true)
-    List<TheatreDetails> getTheatresForMovieInCity(@Param(value = "movieId") Long movieId, @Param(value = "cityId") Long cityId);
 }

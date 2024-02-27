@@ -39,19 +39,6 @@ public class MovieShowService {
     private CityRepository cityRepository;
 
     /**
-     * Used to get all Time Slots for available days for a screen
-     *
-     * @param screenId
-     * @return
-     */
-    public Map<LocalDate, List<ScreenTimeSlotResponse>> getTimeSlots(Long movieId, Long screenId) {
-        Show show = screenMovieRepository.findByMovieIdAndScreenId(movieId, screenId).orElseThrow(() -> new BadRequestException("Invalid Request, either invalid movieId or ScreenId."));
-        List<ScreenTimeSlotDetails> timeSlotDetails = movieShowRepository.getTimeSlots(show.getId());
-
-        return getTimeSlotResponseMap(timeSlotDetails);
-    }
-
-    /**
      * Used to get Time Slot with respect to Date
      *
      * @param timeSlotDetails
@@ -112,30 +99,15 @@ public class MovieShowService {
         City city = theatre.getCity();
         Long cityId = city.getId();
 
-
         Optional<CityMovie> optionalCityMovie = movie.getCityMovieList().stream().filter(cityMovie -> cityMovie.getCity().getId().equals(cityId)).findFirst();
         CityMovie cityMovie;
-        if (optionalCityMovie.isPresent()) {
-            cityMovie = optionalCityMovie.get();
-            Optional<TheatreMovie> optionalTheatreMovie = getExistingTheatreMovie(theatre, cityMovie);
-            if (optionalTheatreMovie.isEmpty()) {
-                cityMovie.getTheatreMovieList().add(getTheatreMovie(theatre, cityMovie));
-            } else {
-                return;
-            }
-        } else {
+        if (optionalCityMovie.isEmpty()) {
             cityMovie = new CityMovie();
             cityMovie.setMovie(movie);
             cityMovie.setCity(city);
-            cityMovie.getTheatreMovieList().add(getTheatreMovie(theatre, cityMovie));
-        }
-        cityMovieRepository.save(cityMovie);
-    }
 
-    private Optional<TheatreMovie> getExistingTheatreMovie(Theatre theatre, CityMovie cityMovie) {
-        Long theatreId = theatre.getId();
-        Optional<TheatreMovie> optionalTheatreMovie = cityMovie.getTheatreMovieList().stream().filter(theatreMovie -> theatreMovie.getTheatre().getId().equals(theatreId)).findFirst();
-        return optionalTheatreMovie;
+            cityMovieRepository.save(cityMovie);
+        }
     }
 
     /**
@@ -239,10 +211,10 @@ public class MovieShowService {
      * @param theatreId
      * @return
      */
-    public Map<Long,MovieDetailsDto> getAllShows(Long theatreId) {
+    public Map<Long, MovieDetailsDto> getAllShows(Long theatreId) {
         theatreRepository.findById(theatreId).orElseThrow(() -> new NotFoundException("Theatre not found for given Id."));
-        List<MovieShowDetails> movieShowDetailsList =  movieShowRepository.getAllUpcomingShows(theatreId);
-        Map<Long,MovieDetailsDto> showDetailsMap = new HashMap<>();
+        List<MovieShowDetails> movieShowDetailsList = movieShowRepository.getAllUpcomingShows(theatreId);
+        Map<Long, MovieDetailsDto> showDetailsMap = new HashMap<>();
         movieShowDetailsList.forEach(movieShowDetails -> {
             addMovieShowDetails(showDetailsMap, movieShowDetails);
         });
@@ -251,14 +223,15 @@ public class MovieShowService {
 
     /**
      * Used to add Movie Show Details
+     *
      * @param showDetailsMap
      * @param movieShowDetails
      */
     private void addMovieShowDetails(Map<Long, MovieDetailsDto> showDetailsMap, MovieShowDetails movieShowDetails) {
         MovieDetailsDto movieDetails = showDetailsMap.getOrDefault(movieShowDetails.getMovieId(), getMovieDetails(movieShowDetails));
         ScreenDetails screenDetails = movieDetails.getScreens().getOrDefault(movieShowDetails.getScreenId(), getScreenDetails(movieShowDetails));
-        List<TimeSlotDetails> shows = screenDetails.getShows().getOrDefault(movieShowDetails.getDate().toLocalDate(), new ArrayList<>());
-        shows.add(new TimeSlotDetails(movieShowDetails.getShowId(), movieShowDetails.getShowTime()));
+        List<ShowDetails> shows = screenDetails.getShows().getOrDefault(movieShowDetails.getDate().toLocalDate(), new ArrayList<>());
+        shows.add(new ShowDetails(movieShowDetails.getShowId(), movieShowDetails.getShowTime()));
         screenDetails.getShows().put(movieShowDetails.getDate().toLocalDate(), shows);
         movieDetails.getScreens().put(movieShowDetails.getScreenId(), screenDetails);
 
@@ -280,8 +253,8 @@ public class MovieShowService {
     private void addTheatreShowDetails(MovieShowTheatreDetails movieShowTheatreDetails, Map<Long, TheatreDetailsDto> showDetailsMap) {
         TheatreDetailsDto theatreDetails = showDetailsMap.getOrDefault(movieShowTheatreDetails.getTheatreId(), getTheatreDetails(movieShowTheatreDetails));
         ScreenDetails screenDetails = theatreDetails.getScreens().getOrDefault(movieShowTheatreDetails.getScreenId(), getScreenDetails(movieShowTheatreDetails));
-        List<TimeSlotDetails> shows = screenDetails.getShows().getOrDefault(movieShowTheatreDetails.getDate().toLocalDate(), new ArrayList<>());
-        shows.add(new TimeSlotDetails(movieShowTheatreDetails.getShowId(), movieShowTheatreDetails.getShowTime()));
+        List<ShowDetails> shows = screenDetails.getShows().getOrDefault(movieShowTheatreDetails.getDate().toLocalDate(), new ArrayList<>());
+        shows.add(new ShowDetails(movieShowTheatreDetails.getShowId(), movieShowTheatreDetails.getShowTime()));
         screenDetails.getShows().put(movieShowTheatreDetails.getDate().toLocalDate(), shows);
         theatreDetails.getScreens().put(movieShowTheatreDetails.getScreenId(), screenDetails);
         showDetailsMap.put(movieShowTheatreDetails.getTheatreId(), theatreDetails);

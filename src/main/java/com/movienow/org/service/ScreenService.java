@@ -26,18 +26,6 @@ public class ScreenService {
     @Autowired
     private MovieRepository movieRepository;
 
-    /**
-     * Used to return available screens for given theatre with given movie
-     *
-     * @param theatreId
-     * @param movieId
-     * @return
-     */
-    public List<ScreenResponse> getScreens(Long theatreId, Long movieId) {
-        theatreRepository.findById(theatreId).orElseThrow(() -> new NotFoundException("Theatre not found for given Id."));
-        movieRepository.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found for given Id."));
-        return screenRepository.getScreens(theatreId, movieId);
-    }
 
     /**
      * Used to get all Screen for a Theatre

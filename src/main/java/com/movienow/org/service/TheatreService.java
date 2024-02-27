@@ -26,7 +26,6 @@ public class TheatreService {
     @Autowired
     private MovieRepository movieRepository;
 
-
     /**
      * Used to add new Theatre
      *
@@ -66,34 +65,5 @@ public class TheatreService {
     public List<TheatreDetails> getTheatres(Long cityId) {
         cityRepository.findById(cityId).orElseThrow(() -> new NotFoundException("City not found for given cityId"));
         return theatreRepository.getTheatres(cityId);
-    }
-
-    /**
-     * Used to get Theatres for a movie in city
-     *
-     * @param cityId
-     * @param movieId
-     * @return
-     */
-    public List<TheatreResponse> getTheatresForMovie(Long cityId, Long movieId) {
-        cityRepository.findById(cityId).orElseThrow(() -> new NotFoundException("City not found with given Id."));
-        movieRepository.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found with given Id."));
-        List<TheatreDetails> theatreDetailsList = theatreRepository.getTheatresForMovieInCity(movieId, cityId);
-        List<TheatreResponse> theatreResponses = new ArrayList<>();
-        theatreDetailsList.forEach(theatreDetails -> theatreResponses.add(getTheatreResponse(theatreDetails)));
-        return theatreResponses;
-    }
-
-    /**
-     * Used to get Theatre Response
-     *
-     * @param theatreDetails
-     * @return
-     */
-    private TheatreResponse getTheatreResponse(TheatreDetails theatreDetails) {
-        TheatreResponse theatreResponse = new TheatreResponse();
-        theatreResponse.setId(theatreDetails.getId());
-        theatreResponse.setName(theatreDetails.getName());
-        return theatreResponse;
     }
 }

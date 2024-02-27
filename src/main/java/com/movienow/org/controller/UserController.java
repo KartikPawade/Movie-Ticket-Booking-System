@@ -57,9 +57,4 @@ public class UserController {
 
         return ResponseEntity.ok().body(jwt);
     }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Object> logoutUser() {//to be implemented
-        return null;
-    }
 }
