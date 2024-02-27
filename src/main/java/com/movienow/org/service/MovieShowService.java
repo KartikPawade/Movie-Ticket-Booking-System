@@ -16,6 +16,8 @@ import java.sql.Date;
 import java.sql.Time;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 
 @Service
@@ -76,16 +78,52 @@ public class MovieShowService {
         // validation
         Movie movie = movieRepository.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found for given Id."));
         Screen screen = screenRepository.findById(screenId).orElseThrow(() -> new NotFoundException("Screen not found for given Id."));
+        Short movieLengthInMinutes = movie.getMovieLengthInMinutes();
 
-        Optional<Show> optionalScreenMovie = screenMovieRepository.findByMovieIdAndScreenId(movieId, screenId);
-        if (optionalScreenMovie.isPresent()) throw new BadRequestException("Screen already has given Movie.");
-        validateMovieShowRequest(movieShowDetailsRequest, movie.getMovieLengthInMinutes());
+        Set<Date> movieShowDates = validateMovieShowRequest(movieShowDetailsRequest, movieLengthInMinutes);
+        // validate in DB if record are already existing
+        List<ShowTimeDetailsResponse> existingShows = movieShowRepository.getShows(screenId, movieId, movieShowDates);
+        existingShows.forEach(showTimeDetailsResponse -> {
+            LocalTime showTime = showTimeDetailsResponse.getShowTime().toLocalTime();
+
+            List<Time> newShowTimes = movieShowDetailsRequest.getTimeSlots().get(showTimeDetailsResponse.getDate());
+            newShowTimes.forEach(requestedShowTime -> {
+                int diff = getAbsDifferenceInMinutes(showTime, requestedShowTime.toLocalTime());
+                if (diff < movieLengthInMinutes) {
+                    throw new BadRequestException("Requested show time is overlapping with existing for date " + showTimeDetailsResponse.getDate().toLocalDate() + " and time " + showTime);
+                }
+            });
+        });
 
         List<Show> movieShows = getShowDetails(movieShowDetailsRequest, screen, movie);
         addMovieToCity(screen, movie);
 
         screenMovieRepository.saveAll(movieShows);
         return "Movie Show Details successfully added to Screen";
+    }
+
+    /**
+     * Used to get Absolute difference between two Time Shows
+     *
+     * @param time1
+     * @param time2
+     * @return
+     */
+    private int getAbsDifferenceInMinutes(LocalTime time1, LocalTime time2) {
+        int totalMinutes = 0;
+        if (time2.isAfter(time1)) {
+            LocalTime temp = time1;
+            time1 = time2;
+            time2 = temp;
+        }
+        var hd = time1.getHour() - time2.getHour();
+        var md = time1.getMinute() - time2.getMinute();
+
+        if (hd != 0) {
+            totalMinutes += hd * 60;
+        }
+        totalMinutes += md;
+        return totalMinutes;
     }
 
     /**
@@ -169,7 +207,7 @@ public class MovieShowService {
      *
      * @param movieShowDetailsRequest
      */
-    private void validateMovieShowRequest(MovieShowDetailsRequest movieShowDetailsRequest, Short movieLengthInMinutes) {
+    private Set<Date> validateMovieShowRequest(MovieShowDetailsRequest movieShowDetailsRequest, Short movieLengthInMinutes) {
         Map<Date, List<Time>> timeSLotsMap = movieShowDetailsRequest.getTimeSlots();
 
         timeSLotsMap.forEach((key, value) -> {
@@ -181,10 +219,11 @@ public class MovieShowService {
                 Time currShowTime = value.get(i);
                 Duration duration = Duration.between(prevShowTime.toLocalTime(), currShowTime.toLocalTime());
                 if (duration.toMinutes() < movieLengthInMinutes)
-                    throw new BadRequestException("Invalid Time Slot Requested to be added to Screen as the Movie-times are overlapping fr Movie-length: " + movieLengthInMinutes + " minutes");
+                    throw new BadRequestException("Invalid Shows Requested to be added to Screen as the Movie-times are overlapping for Movie-length: " + movieLengthInMinutes + " in minutes");
                 prevShowTime = currShowTime;
             }
         });
+        return timeSLotsMap.keySet();
     }
 
     /**

@@ -1,15 +1,17 @@
 package com.movienow.org.repository;
 
+import com.movienow.org.dto.ShowTimeDetailsResponse;
 import com.movienow.org.dto.MovieShowDetails;
 import com.movienow.org.dto.MovieShowTheatreDetails;
-import com.movienow.org.dto.ScreenTimeSlotDetails;
 import com.movienow.org.entity.Show;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface MovieShowRepository extends JpaRepository<Show, Long> {
@@ -33,6 +35,14 @@ public interface MovieShowRepository extends JpaRepository<Show, Long> {
             "where (sho.date = current_date and sho.show_time >= current_time) or (sho.date > current_date) " +
             "and scr.theatre_id = :theatreId " +
             "order by sho.date, sho.show_time ",
-    nativeQuery = true)
+            nativeQuery = true)
     List<MovieShowDetails> getAllUpcomingShows(@Param(value = "theatreId") Long theatreId);
+
+    List<Show> findAllByScreenIdAndMovieIdAndDateIn(Long screenId, Long movieId, Set<Date> movieShowDates);
+
+    @Query(value = "select s.\"date\" ,s.show_time as showTime from \"show\" s  " +
+            "where s.screen_id = :screenId and s.movie_id = :movieId " +
+            "and s.\"date\" in :movieShowDates ",
+            nativeQuery = true)
+    List<ShowTimeDetailsResponse> getShows(@Param(value = "screenId") Long screenId, @Param(value = "movieId") Long movieId,@Param(value = "movieShowDates") Set<Date> movieShowDates);
 }

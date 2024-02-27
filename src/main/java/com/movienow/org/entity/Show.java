@@ -12,6 +12,9 @@ import java.sql.Time;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(uniqueConstraints = {
+        @UniqueConstraint(name = "uk_screen_movie_date_showTime", columnNames = {"screen_id","movie_id","date","show_time"})
+})
 public class Show {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
