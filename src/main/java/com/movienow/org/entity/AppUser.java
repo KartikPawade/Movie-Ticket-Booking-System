@@ -22,9 +22,6 @@ import lombok.NonNull;
         @UniqueConstraint(columnNames = {"email", "phone"})
 })
 public class AppUser {
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.AUTO)
-//    private Long id;
 
     private String firstName;
     private String lastName;
