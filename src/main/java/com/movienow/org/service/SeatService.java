@@ -54,12 +54,12 @@ public class SeatService {
     /**
      * Used to get all available seats fot timeSlot for a screen
      *
-     * @param timeSlotId
+     * @param showId
      * @return
      */
-    public List<SeatResponse> getSeats(Long timeSlotId) {
-        movieShowRepository.findById(timeSlotId).orElseThrow(() -> new NotFoundException("Movie Time Slot does not exist for given Id."));
-        return seatRepository.getSeats(timeSlotId);
+    public List<SeatResponse> getSeats(Long showId) {
+        movieShowRepository.findById(showId).orElseThrow(() -> new NotFoundException("Movie Time Slot does not exist for given Id."));
+        return seatRepository.getAvailableSeats(showId);
     }
 
 
@@ -78,19 +78,17 @@ public class SeatService {
     /**
      * Used to block the seats temporarily for some time, to be booked by a User
      *
-     * @param timeSlotId
+     * @param showId
      * @return
      */
-    public String bookSeats(Long timeSlotId, List<Long> seatIds) {
-        List<BookingResponse> bookingResponses = seatRepository.getSeats(timeSlotId, seatIds);
-        if (bookingResponses.size() != seatIds.size())
-            throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
+    public String bookSeats(Long showId, List<Long> seatIds) {
+        validateSeatsAndShow(seatIds, showId);
 
-        for (Long seatId : seatIds) {
-            if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
-                throw new BadRequestException("Some of requested seats are being booked by someone else.");
-            }
+        List<BookingResponse> bookingResponses = seatRepository.getSeats(showId, seatIds);
+        if (bookingResponses.size() != seatIds.size()) {
+            throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
         }
+        validateIfSeatsAreBookedTemporarily(seatIds);
 
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userDetails.getUsername();
@@ -105,6 +103,33 @@ public class SeatService {
         redisTemplate.expire(userName, Duration.ofMinutes(Integer.parseInt(redisKeyExpiryTime)));
 
         return "Seats Booked temporarily";
+    }
+
+    /**
+     * Used to check if request seats are already in Booking process by other user
+     *
+     * @param seatIds
+     */
+    private void validateIfSeatsAreBookedTemporarily(List<Long> seatIds) {
+        for (Long seatId : seatIds) {
+            if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
+                throw new BadRequestException("Some of requested seats are being booked by someone else.");
+            }
+        }
+    }
+
+    /**
+     * Used to validate SeatIds and Show
+     *
+     * @param seatIds
+     * @param showId
+     */
+    private void validateSeatsAndShow(List<Long> seatIds, Long showId) {
+        movieShowRepository.findById(showId).orElseThrow(() -> new NotFoundException("Show not found for given Id."));
+        List<Long> existingSeatIds = seatRepository.getAllExistingSeatIds(seatIds);
+        if (existingSeatIds.size() != seatIds.size()) {
+            throw new BadRequestException("Invalid seats requested for Booking.");
+        }
     }
 
     /**
