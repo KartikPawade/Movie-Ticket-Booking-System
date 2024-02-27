@@ -15,28 +15,15 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
-
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping(value = "/cities/{cityId}/movies")
     public ResponseEntity<Object> getMovies(@PathVariable("cityId") final Long cityId) {
         return ResponseEntity.ok().body(movieService.getMovies(cityId));
     }
 
-    @PreAuthorize("hasAuthority('USER')")
-    @GetMapping(value = "/cities/theatres/{theatreId}/movies")
-    public ResponseEntity<Object> getMoviesForTheatre(@PathVariable("theatreId") final Long theatreId) {
-        return ResponseEntity.ok().body(movieService.getMoviesForTheatre(theatreId));
-    }
-
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/movies")
     public ResponseEntity<Object> addMovie(@RequestBody MovieRequest movieRequest) {
         return ResponseEntity.ok().body(movieService.addMovie(movieRequest));
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(value = "/cities/theatres/movies/{movieId}")
-    public ResponseEntity<Object> addMovieToTheatres(@PathVariable(value = "movieId") final Long movieId, @RequestParam("theatreIds") List<Long> theatreIds) {
-        return ResponseEntity.ok().body(movieService.addMovieToTheatres(movieId, theatreIds));
     }
 }

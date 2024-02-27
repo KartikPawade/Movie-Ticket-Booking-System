@@ -4,5 +4,4 @@ public interface ScreenResponse {
     Long getScreenId();
 
     String getScreenName();
-
 }

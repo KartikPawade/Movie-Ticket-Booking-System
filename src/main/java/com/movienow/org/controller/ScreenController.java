@@ -15,13 +15,7 @@ import java.util.List;
 public class ScreenController {
     @Autowired
     private ScreenService screenService;
-
-    @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/theatres/{theatreId}/movies/{movieId}/screens")
-    public ResponseEntity<Object> getScreens(@PathVariable(value = "theatreId") final Long theatreId,
-                                             @PathVariable(value = "movieId") final Long movieId) {
-        return ResponseEntity.ok().body(screenService.getScreens(theatreId, movieId));
-    }
+    
 
     @PreAuthorize("hasAuthority('MANAGER')")
     @GetMapping("/cities/theatres/{theatreId}/screens")

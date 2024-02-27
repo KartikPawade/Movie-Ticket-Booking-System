@@ -30,10 +30,4 @@ public class TheatreController {
     public ResponseEntity<Object> getTheatres(@PathVariable("cityId") final Long cityId) {
         return ResponseEntity.ok().body(theatreService.getTheatres(cityId));
     }
-
-    @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/{cityId}/movies/{movieId}/theatres")
-    public ResponseEntity<Object> getTheatresForMovieInCity(@PathVariable("cityId") final Long cityId, @PathVariable("movieId") final Long movieId) {
-        return ResponseEntity.ok().body(theatreService.getTheatresForMovie(cityId, movieId));
-    }
 }

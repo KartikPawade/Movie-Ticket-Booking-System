@@ -16,9 +16,9 @@ public class SeatController {
     private SeatService seatService;
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
-    public ResponseEntity<Object> getSeats(@PathVariable("timeSlotId") final Long timeSlotId) {
-        return ResponseEntity.ok().body(seatService.getSeats(timeSlotId));
+    @GetMapping("/cities/theatres/movies/screens/shows/{showId}/seats")
+    public ResponseEntity<Object> getSeats(@PathVariable("showId") final Long showId) {
+        return ResponseEntity.ok().body(seatService.getSeats(showId));
     }
 
     @PreAuthorize("hasAuthority('MANAGER')")
@@ -37,15 +37,14 @@ public class SeatController {
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
-    public ResponseEntity<Object> bookSeats(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody List<Long> seatTimeSlotIds) {
-        return ResponseEntity.ok().body(seatService.bookSeats(timeSlotId, seatTimeSlotIds));
+    @PostMapping("/cities/theatres/movies/screens/shows/{showId}/seats")
+    public ResponseEntity<Object> bookSeats(@PathVariable("showId") final Long showId, @RequestBody List<Long> seatTimeSlotIds) {
+        return ResponseEntity.ok().body(seatService.bookSeats(showId, seatTimeSlotIds));
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats/checkout")
-    public ResponseEntity<Object> doPayment(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody PaymentRequest paymentRequest) {
-        return ResponseEntity.ok().body(seatService.doPayment(timeSlotId, paymentRequest));
+    @PostMapping("/cities/theatres/movies/screens/shows/{showId}/seats/checkout")
+    public ResponseEntity<Object> doPayment(@PathVariable("showId") final Long showId, @RequestBody PaymentRequest paymentRequest) {
+        return ResponseEntity.ok().body(seatService.doPayment(showId, paymentRequest));
     }
-
 }

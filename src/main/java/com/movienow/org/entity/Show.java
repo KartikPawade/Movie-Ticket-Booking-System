@@ -5,17 +5,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Date;
+import java.sql.Time;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_screen_movie", columnNames = {"screen_id","movie_id"})
+        @UniqueConstraint(name = "uk_screen_movie_date_showTime", columnNames = {"screen_id","movie_id","date","show_time"})
 })
-public class ScreenMovie {
+public class Show {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -30,6 +30,7 @@ public class ScreenMovie {
 
     private Short seatPrice;
 
-    @OneToMany(mappedBy = "screenMovie",cascade = CascadeType.ALL)
-    List<ScreenTimeSlot> screenTimeSlots = new ArrayList<>();
+    private Date date;
+
+    private Time showTime;
 }

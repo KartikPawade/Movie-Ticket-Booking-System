@@ -13,18 +13,19 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_city_movie",columnNames = {"city_id","movie_id"})
+        @UniqueConstraint(name = "uk_chargeId_user", columnNames = {"user_id","charge_id"})
 })
-public class CityMovie {
+public class PaymentDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
+    private String chargeId;
+    private Double totalBookingPrice;
     @ManyToOne
-    @JoinColumn(name = "movie_id")
-    private Movie movie;
+    @JoinColumn(name = "user_id")
+    AppUser user;
 
-    @ManyToOne
-    @JoinColumn(name = "city_id")
-    private City city;
+    @OneToMany(mappedBy = "paymentDetails",cascade = CascadeType.ALL)
+    private List<BookingDetails> bookingDetails = new ArrayList<>();
 }

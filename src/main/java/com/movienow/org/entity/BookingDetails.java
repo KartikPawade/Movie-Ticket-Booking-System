@@ -1,30 +1,38 @@
-
 package com.movienow.org.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(uniqueConstraints = {
+        @UniqueConstraint(name = "uK_show_seat", columnNames = {"show_id", "seat_id"})
+})
 public class BookingDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    AppUser user;
-    private String chargeId;
+    @JoinColumn(name = "show_id")
+    private Show show;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<TimeSlotSeat> seatTimeSlots = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "seat_id")
+    private Seat seat;
 
-    private Double totalBookingPrice;
+    @ManyToOne
+    @JoinColumn(name = "payment_details_id")
+    private PaymentDetails paymentDetails;
 }
