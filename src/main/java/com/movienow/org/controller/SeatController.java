@@ -16,7 +16,7 @@ public class SeatController {
     private SeatService seatService;
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
+    @GetMapping("/cities/theatres/movies/screens/shows/{timeSlotId}/seats")
     public ResponseEntity<Object> getSeats(@PathVariable("timeSlotId") final Long timeSlotId) {
         return ResponseEntity.ok().body(seatService.getSeats(timeSlotId));
     }
@@ -37,13 +37,13 @@ public class SeatController {
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats")
+    @PostMapping("/cities/theatres/movies/screens/shows/{timeSlotId}/seats")
     public ResponseEntity<Object> bookSeats(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody List<Long> seatTimeSlotIds) {
         return ResponseEntity.ok().body(seatService.bookSeats(timeSlotId, seatTimeSlotIds));
     }
 
     @PreAuthorize("hasAuthority('USER')")
-    @PostMapping("/cities/theatres/movies/screens/time-slots/{timeSlotId}/seats/checkout")
+    @PostMapping("/cities/theatres/movies/screens/shows/{timeSlotId}/seats/checkout")
     public ResponseEntity<Object> doPayment(@PathVariable("timeSlotId") final Long timeSlotId, @RequestBody PaymentRequest paymentRequest) {
         return ResponseEntity.ok().body(seatService.doPayment(timeSlotId, paymentRequest));
     }
