@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,10 @@ public class CityMovie {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
+
     @ManyToOne
     @JoinColumn(name = "city_id")
     private City city;
+
+    private Date availableTillDate;
 }
