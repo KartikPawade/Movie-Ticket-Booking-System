@@ -21,6 +21,13 @@ public class RabbitConfig {
     @Value("${rabbitmq.email.binding.key}")
     private String emailBindingKey;
 
+    @Value("${rabbitmq.payment.details.unsaved.queue}")
+    private String unsavedPaymentDetailsQueue;
+    @Value("${rabbitmq.payment.details.unsaved.exchange.name}")
+    private String unsavedPaymentDetailsExchange;
+    @Value("${rabbitmq.payment.details.unsaved.binding.key}")
+    private String unsavedPaymentDetailsBindingKey;
+
 
     @Bean
     public Queue emailQueue() {
@@ -28,13 +35,26 @@ public class RabbitConfig {
     }
 
     @Bean
-    public TopicExchange topicExchange() {
+    public TopicExchange emailTopicExchange() {
         return new TopicExchange(emailExchangeName);
     }
 
     @Bean
-    public Binding binding() {
-        return BindingBuilder.bind(emailQueue()).to(topicExchange()).with(emailBindingKey);
+    public Binding emailBinding() {
+        return BindingBuilder.bind(emailQueue()).to(emailTopicExchange()).with(emailBindingKey);
+    }
+
+    @Bean
+    public Queue unsavedPaymentDetailsQueue() {
+        return new Queue(unsavedPaymentDetailsQueue);
+    }
+    @Bean
+    public TopicExchange unsavedPaymentDetailsExchange() {
+        return new TopicExchange(unsavedPaymentDetailsExchange);
+    }
+    @Bean
+    public Binding unsavedPaymentDetailsBinding() {
+        return BindingBuilder.bind(unsavedPaymentDetailsQueue()).to(unsavedPaymentDetailsExchange()).with(unsavedPaymentDetailsBindingKey);
     }
 
     @Bean
@@ -45,9 +65,6 @@ public class RabbitConfig {
         rabbitTemplate.setMessageConverter(messageConverter());
         return rabbitTemplate;
     }
-
-
-
 
     @Bean
     public MessageConverter messageConverter() {

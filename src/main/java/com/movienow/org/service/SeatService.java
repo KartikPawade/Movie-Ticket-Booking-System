@@ -1,9 +1,6 @@
 package com.movienow.org.service;
 
-import com.movienow.org.dto.BookingResponse;
-import com.movienow.org.dto.EmailDetails;
-import com.movienow.org.dto.SeatResponse;
-import com.movienow.org.dto.UserBookingDetails;
+import com.movienow.org.dto.*;
 import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
@@ -12,6 +9,7 @@ import com.movienow.org.payment.PaymentRequest;
 import com.movienow.org.payment.PaymentResponse;
 import com.movienow.org.repository.*;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +22,7 @@ import java.time.Duration;
 import java.util.*;
 
 @Service
+@Slf4j
 public class SeatService {
     @Autowired
     private SeatRepository seatRepository;
@@ -49,6 +48,11 @@ public class SeatService {
     private String emailExchangeName;
     @Value("${rabbitmq.email.routing.key}")
     private String emailRoutingKey;
+
+    @Value("${rabbitmq.payment.details.unsaved.exchange.name}")
+    private String unsavedPaymentDetailsExchange;
+    @Value("${rabbitmq.payment.details.unsaved.routing.key}")
+    private String unsavedPaymentDetailsRoutingKey;
 
 
     /**
@@ -151,8 +155,7 @@ public class SeatService {
      * @param paymentRequest
      * @return
      */
-    @Transactional
-    public String doPayment(Long showId, PaymentRequest paymentRequest) {
+    public String checkout(Long showId, PaymentRequest paymentRequest) {
         Show timeSlot = movieShowRepository.findById(showId).orElseThrow(() -> new NotFoundException("Movie Show not found with given Id."));
         List<Seat> seats = seatRepository.findAllById(paymentRequest.getSeatIds());
         if (seats.size() != paymentRequest.getSeatIds().size()) {
@@ -164,9 +167,8 @@ public class SeatService {
         Double totalPrice = (double) 0;
         Set<Long> seatIds = paymentRequest.getSeatIds();
         try {
-            List<UserBookingDetails> list = (List<UserBookingDetails>) redisTemplate.opsForHash().get(userName, userName);
-            if (list == null) throw new BadRequestException("Payment window Timeout.");
-
+            List<UserBookingDetails> list = getBookingDetailsForUser(userName);
+            if (list == null) throw new BadRequestException("Sorry, Invalid request");
             for (UserBookingDetails userBookingDetails : list) {
                 if (!seatIds.contains(userBookingDetails.getSeatId()))
                     throw new BadRequestException("Invalid Seat Bookings Requested.");
@@ -175,15 +177,61 @@ public class SeatService {
         } catch (Exception e) {
             throw new BadRequestException(e.getMessage());
         }
-
         PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
+        removeTemporaryBookingDetailsForUser(userName);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
-            savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
+            try {
+                savePaymentDetails(paymentResponse, userDetails, timeSlot, seats, totalPrice);
+            } catch (Exception e) {
+                log.error("Unsaved Payment::" + e.getMessage());
+                rabbitTemplate.convertAndSend(unsavedPaymentDetailsExchange, unsavedPaymentDetailsRoutingKey, getPaymentDetails(userDetails.getUsername(), totalPrice, paymentRequest.getSeatIds(), showId, paymentResponse.getChargeId()));
+            }
+            EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
+            rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
+            return "Payment Successful";
         }
-        EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
-        rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
-        return "Payment Successful";
+        return "Payment was unsuccessful.";
     }
+
+    /**
+     * Used to remove Booking details
+     *
+     * @param userName
+     */
+    private void removeTemporaryBookingDetailsForUser(String userName) {
+        redisTemplate.opsForHash().delete(userName, userName);
+    }
+
+    /**
+     * Used to Fetch Seats booked temporarily by User
+     *
+     * @param userName
+     * @return
+     */
+    private List<UserBookingDetails> getBookingDetailsForUser(String userName) {
+        return (List<UserBookingDetails>) redisTemplate.opsForHash().get(userName, userName);
+    }
+
+    /**
+     * Used to get Payment Details
+     *
+     * @param username
+     * @param totalPrice
+     * @param seatIds
+     * @param showId
+     * @param chargeId
+     * @return
+     */
+    private PaymentDetailsDto getPaymentDetails(String username, Double totalPrice, Set<Long> seatIds, Long showId, String chargeId) {
+        PaymentDetailsDto paymentDetails = new PaymentDetailsDto();
+        paymentDetails.setUserEmail(username);
+        paymentDetails.setShowId(showId);
+        paymentDetails.getSeatIds().addAll(seatIds);
+        paymentDetails.setTotalPrice(totalPrice);
+        paymentDetails.setChargeId(chargeId);
+        return paymentDetails;
+    }
+
 
     /**
      * Used to get Email Details
@@ -207,6 +255,7 @@ public class SeatService {
      * @param seats
      * @param totalPrice
      */
+    @Transactional
     private void savePaymentDetails(PaymentResponse paymentResponse, UserDetails userDetails, Show show, List<Seat> seats, Double totalPrice) {
         List<BookingDetails> bookingDetailsList = new ArrayList<>();
         AppUser user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new NotFoundException("User not found for given Id."));

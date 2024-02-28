@@ -44,7 +44,7 @@ public class SeatController {
 
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping("/cities/theatres/movies/screens/shows/{showId}/seats/checkout")
-    public ResponseEntity<Object> doPayment(@PathVariable("showId") final Long showId, @RequestBody PaymentRequest paymentRequest) {
-        return ResponseEntity.ok().body(seatService.doPayment(showId, paymentRequest));
+    public ResponseEntity<Object> checkout(@PathVariable("showId") final Long showId, @RequestBody PaymentRequest paymentRequest) {
+        return ResponseEntity.ok().body(seatService.checkout(showId, paymentRequest));
     }
 }
