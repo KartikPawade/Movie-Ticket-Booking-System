@@ -1,17 +1,22 @@
 package com.movienow.org.service;
 
+import com.movienow.org.constants.CacheConstants;
+import com.movienow.org.dto.MovieDetailsResponse;
 import com.movienow.org.dto.MovieRequest;
 import com.movienow.org.dto.MovieResponse;
 import com.movienow.org.entity.Movie;
 import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class MovieService {
+
     @Autowired
     private CityRepository cityRepository;
     @Autowired
@@ -29,9 +34,25 @@ public class MovieService {
      * @param cityId
      * @return
      */
-    public List<MovieResponse> getMovies(Long cityId) {
+    @Cacheable(cacheNames = CacheConstants.CACHE_MOVIES_FOR_CITY,key = "#cityId", sync = true)
+    public List<MovieDetailsResponse> getMovies(Long cityId) {
         cityRepository.findById(cityId).orElseThrow(() -> new NotFoundException("City not found for given cityId"));
-        return cityMovieRepository.getMovies(cityId);
+        List<MovieResponse> movieDetails = cityMovieRepository.getMovies(cityId);
+        List<MovieDetailsResponse> movieDetailsResponses =  movieDetails.stream().map(this::getMovieDetailsResponse).toList();
+        return movieDetailsResponses;
+    }
+
+    /**
+     * Used to get Movie Details Response
+     *
+     * @param movieResponse
+     * @return
+     */
+    private MovieDetailsResponse getMovieDetailsResponse(MovieResponse movieResponse) {
+        MovieDetailsResponse movieDetailsResponse = new MovieDetailsResponse();
+        movieDetailsResponse.setId(movieResponse.getId());
+        movieDetailsResponse.setName(movieResponse.getName());
+        return movieDetailsResponse;
     }
 
     /**

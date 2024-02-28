@@ -1,6 +1,8 @@
 package com.movienow.org.dto;
 
-public interface MovieResponse {
+import java.io.Serializable;
+
+public interface MovieResponse{
     Long getId();
     String getName();
 }
