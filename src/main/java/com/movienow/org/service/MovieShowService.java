@@ -1,5 +1,6 @@
 package com.movienow.org.service;
 
+import com.movienow.org.constants.CacheConstants;
 import com.movienow.org.dto.*;
 import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
@@ -8,7 +9,11 @@ import com.movienow.org.repository.*;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.support.SimpleValueWrapper;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -18,10 +23,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Validated
+@Slf4j
 public class MovieShowService {
     @Autowired
     private ScreenRepository screenRepository;
@@ -39,6 +44,9 @@ public class MovieShowService {
     private TheatreRepository theatreRepository;
     @Autowired
     private CityRepository cityRepository;
+    @Autowired
+    private RedisCacheManager cacheManager;
+
 
     /**
      * Used to get Time Slot with respect to Date
@@ -94,12 +102,55 @@ public class MovieShowService {
                 }
             });
         });
-
         List<Show> movieShows = getShowDetails(movieShowDetailsRequest, screen, movie);
-        addMovieToCity(screen, movie,movieShowDetailsRequest.getTimeSlots().keySet());
+        Theatre theatre = screen.getTheatre();
+        City city = theatre.getCity();
+        addMovieToCity(city, movie, movieShowDetailsRequest.getTimeSlots().keySet());
 
         screenMovieRepository.saveAll(movieShows);
         return "Movie Show Details successfully added to Screen";
+    }
+
+    /**
+     * Used to get MovieDetailsResponse
+     *
+     * @param movie
+     * @return
+     */
+    private MovieDetailsResponse getMovieDetailsResponse(Movie movie) {
+        MovieDetailsResponse movieDetailsResponse = new MovieDetailsResponse();
+        movieDetailsResponse.setId(movie.getId());
+        movieDetailsResponse.setName(movie.getName());
+        return movieDetailsResponse;
+    }
+
+    /**
+     * Used to update Cache for given key
+     *
+     * @param cacheName
+     * @param key
+     * @param newMovieDetails
+     */
+    public void updateCache(String cacheName, Long key, MovieDetailsResponse newMovieDetails) {
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            Object cachedValue = cache.get(key);
+            List<MovieDetailsResponse> existingList = null;
+            if (cachedValue instanceof SimpleValueWrapper) {
+                try {
+                    cachedValue = ((SimpleValueWrapper) cachedValue).get();
+                    if (cachedValue instanceof List) {
+                        existingList = (List<MovieDetailsResponse>) cachedValue;
+                        List<MovieDetailsResponse> movieDetailsResponses = new ArrayList<>(existingList);
+                        movieDetailsResponses.add(newMovieDetails);
+                        System.out.println(movieDetailsResponses);
+                        cache.put(key, movieDetailsResponses);
+                    }
+                } catch (Exception e) {
+                    log.error("CACHE ERROR:: unable to update cache: " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -129,23 +180,20 @@ public class MovieShowService {
     /**
      * Used to link Movie to City and Theatre
      *
-     * @param screen
+     * @param city
      * @param movie
      * @param showRequestdates
      */
-    private void addMovieToCity(Screen screen, Movie movie, Set<Date> showRequestdates) {
+    private void addMovieToCity(City city, Movie movie, Set<Date> showRequestdates) {
         Date lastAvalibleMovieDate = null;
-        for(Date sh : showRequestdates){
+        for (Date sh : showRequestdates) {
             if (lastAvalibleMovieDate == null) {
                 lastAvalibleMovieDate = sh;
             } else if (sh.compareTo(lastAvalibleMovieDate) > 0) {
                 lastAvalibleMovieDate = sh;
             }
         }
-        Theatre theatre = screen.getTheatre();
-        City city = theatre.getCity();
         Long cityId = city.getId();
-
         Optional<CityMovie> optionalCityMovie = movie.getCityMovieList().stream().filter(cityMovie -> cityMovie.getCity().getId().equals(cityId)).findFirst();
         CityMovie cityMovie;
         if (optionalCityMovie.isEmpty()) {
@@ -154,9 +202,13 @@ public class MovieShowService {
             cityMovie.setCity(city);
             cityMovie.setAvailableTillDate(lastAvalibleMovieDate);
             cityMovieRepository.save(cityMovie);
-        }else {
+
+            MovieDetailsResponse movieDetailsResponse = getMovieDetailsResponse(movie);
+            //Updates Cache
+            updateCache(CacheConstants.CACHE_MOVIES_FOR_CITY, cityId, movieDetailsResponse);
+        } else {
             cityMovie = optionalCityMovie.get();
-            if(cityMovie.getAvailableTillDate().compareTo(lastAvalibleMovieDate)<0){
+            if (cityMovie.getAvailableTillDate().compareTo(lastAvalibleMovieDate) < 0) {
                 cityMovie.setAvailableTillDate(lastAvalibleMovieDate);
                 cityMovieRepository.save(cityMovie);
             }
