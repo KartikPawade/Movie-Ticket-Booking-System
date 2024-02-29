@@ -1,16 +1,18 @@
 package com.movienow.org.service;
 
-import com.movienow.org.dto.AddTheatreRequest;
-import com.movienow.org.dto.TheatreDetails;
-import com.movienow.org.dto.TheatreResponse;
+import com.movienow.org.constants.CacheConstants;
+import com.movienow.org.dto.*;
 import com.movienow.org.entity.City;
 import com.movienow.org.entity.Theatre;
 import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.CityRepository;
 import com.movienow.org.repository.MovieRepository;
 import com.movienow.org.repository.TheatreRepository;
+import com.movienow.org.uitls.CacheUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,13 +20,17 @@ import java.util.List;
 
 @Service
 @Slf4j
+@CacheConfig(cacheNames = CacheConstants.CACHE_THEATRE_FOR_CITY_V_1)
 public class TheatreService {
+
     @Autowired
     private CityRepository cityRepository;
     @Autowired
     private TheatreRepository theatreRepository;
     @Autowired
     private MovieRepository movieRepository;
+    @Autowired
+    private CacheUtils cacheUtils;
 
     /**
      * Used to add new Theatre
@@ -35,9 +41,26 @@ public class TheatreService {
      */
     public String addTheatre(Long cityId, AddTheatreRequest addTheatreRequest) {
         Theatre theatre = getTheatre(cityId, addTheatreRequest);
-        theatreRepository.save(theatre);
+        Theatre savedTheatre = theatreRepository.save(theatre);
+
+        updateCache(cityId, savedTheatre);
         return "Theatre details saved successfully";
     }
+
+    /**
+     * Used to update Cache
+     *
+     * @param cityId
+     * @param savedTheatre
+     */
+    private void updateCache(Long cityId, Theatre savedTheatre) {
+        TheatreDetailsResponse theatreDetailsResponse = new TheatreDetailsResponse();
+        theatreDetailsResponse.setId(savedTheatre.getId());
+        theatreDetailsResponse.setName(savedTheatre.getName());
+
+        cacheUtils.updateCacheList(CacheConstants.CACHE_THEATRE_FOR_CITY_V_1, cityId, TheatreDetailsResponse.class, theatreDetailsResponse);
+    }
+
 
     /**
      * Used to get Theatre object
@@ -62,8 +85,25 @@ public class TheatreService {
      * @param cityId
      * @return
      */
-    public List<TheatreDetails> getTheatres(Long cityId) {
+    @Cacheable(key = "#cityId", sync = true)
+    public List<TheatreDetailsResponse> getTheatres(Long cityId) {
         cityRepository.findById(cityId).orElseThrow(() -> new NotFoundException("City not found for given cityId"));
-        return theatreRepository.getTheatres(cityId);
+        List<TheatreDetails> theatreDetailsList = theatreRepository.getTheatres(cityId);
+        List<TheatreDetailsResponse> theatreDetailsResponses = new ArrayList<>();
+        theatreDetailsList.forEach(theatreDetails -> theatreDetailsResponses.add(getTheatreDetailsResponse(theatreDetails)));
+        return theatreDetailsResponses;
+    }
+
+    /**
+     * Used to get Theatre Details Response
+     *
+     * @param theatreDetails
+     * @return
+     */
+    private TheatreDetailsResponse getTheatreDetailsResponse(TheatreDetails theatreDetails) {
+        TheatreDetailsResponse theatreDetailsResponse = new TheatreDetailsResponse();
+        theatreDetailsResponse.setId(theatreDetails.getId());
+        theatreDetailsResponse.setName(theatreDetails.getName());
+        return theatreDetailsResponse;
     }
 }

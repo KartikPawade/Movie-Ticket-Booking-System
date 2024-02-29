@@ -6,6 +6,7 @@ import com.movienow.org.entity.*;
 import com.movienow.org.exception.BadRequestException;
 import com.movienow.org.exception.NotFoundException;
 import com.movienow.org.repository.*;
+import com.movienow.org.uitls.CacheUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -45,7 +46,7 @@ public class MovieShowService {
     @Autowired
     private CityRepository cityRepository;
     @Autowired
-    private RedisCacheManager cacheManager;
+    private CacheUtils cacheUtils;
 
 
     /**
@@ -124,34 +125,7 @@ public class MovieShowService {
         return movieDetailsResponse;
     }
 
-    /**
-     * Used to update Cache for given key
-     *
-     * @param cacheName
-     * @param key
-     * @param newMovieDetails
-     */
-    public void updateCache(String cacheName, Long key, MovieDetailsResponse newMovieDetails) {
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache != null) {
-            Object cachedValue = cache.get(key);
-            List<MovieDetailsResponse> existingList = null;
-            if (cachedValue instanceof SimpleValueWrapper) {
-                try {
-                    cachedValue = ((SimpleValueWrapper) cachedValue).get();
-                    if (cachedValue instanceof List) {
-                        existingList = (List<MovieDetailsResponse>) cachedValue;
-                        List<MovieDetailsResponse> movieDetailsResponses = new ArrayList<>(existingList);
-                        movieDetailsResponses.add(newMovieDetails);
-                        System.out.println(movieDetailsResponses);
-                        cache.put(key, movieDetailsResponses);
-                    }
-                } catch (Exception e) {
-                    log.error("CACHE ERROR:: unable to update cache: " + e.getMessage());
-                }
-            }
-        }
-    }
+
 
     /**
      * Used to get Absolute difference between two Time Shows
@@ -205,7 +179,7 @@ public class MovieShowService {
 
             MovieDetailsResponse movieDetailsResponse = getMovieDetailsResponse(movie);
             //Updates Cache
-            updateCache(CacheConstants.CACHE_MOVIES_FOR_CITY, cityId, movieDetailsResponse);
+            cacheUtils.updateCacheList(CacheConstants.CACHE_MOVIES_FOR_CITY, cityId, MovieDetailsResponse.class, movieDetailsResponse);
         } else {
             cityMovie = optionalCityMovie.get();
             if (cityMovie.getAvailableTillDate().compareTo(lastAvalibleMovieDate) < 0) {
