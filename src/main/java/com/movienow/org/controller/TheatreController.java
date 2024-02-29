@@ -18,8 +18,7 @@ public class TheatreController {
     @Autowired
     private TheatreService theatreService;
 
-
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('MANAGER')")
     @PostMapping("/cities/{cityId}/theatres/add-theatre")
     public ResponseEntity<Object> addTheatre(@PathVariable(name = "cityId") final Long cityId, @RequestBody AddTheatreRequest addTheatreRequest) {
         return ResponseEntity.ok().body(theatreService.addTheatre(cityId, addTheatreRequest));
