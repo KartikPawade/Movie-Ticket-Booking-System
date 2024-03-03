@@ -116,6 +116,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>movie-ticket-booking-system</finalName>
     </build>
 
 </project>
