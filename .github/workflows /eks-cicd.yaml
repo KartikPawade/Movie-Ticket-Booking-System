@@ -3,6 +3,8 @@ name: CI/CD pipeline for MovieTicketBookingSystem app on AWS EKS
 on:
   push:
     branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 env:
   AWS_REGION: ap-south-1                   # setting my AWS region (Mumbai)
