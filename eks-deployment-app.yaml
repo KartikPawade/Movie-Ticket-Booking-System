@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-ticket-booking-system-deployment
+spec:
+  selector:
+    matchLabels:
+      app: movie-ticket-booking-system-app
+  template:
+    metadata:
+      labels:
+        app: movie-ticket-booking-system-app
+    spec:
+      containers:
+        - name: movie-ticket-booking-system-container
+          image: 471112883352.dkr.ecr.ap-south-1.amazonaws.com/eks-movieticketbookingsystem:0.4
+          ports:
+            - containerPort: 8080
+          env:
+# DATABASE ENVs
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: postgres_host
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: postgres_db
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: application-secrets
+                  key: postgres_user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-secrets
+                  key: postgres_password
+# RABBIT MQ ENVs
+            - name: RABBIT_MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: rabbit_mq_host
+            - name: RABBIT_MQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: application-secrets
+                  key: rabbitmq_user
+            - name: RABBIT_MQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-secrets
+                  key: rabbitmq_password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-ticket-booking-system-service
+spec:
+  selector:
+    app: movie-ticket-booking-system-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer

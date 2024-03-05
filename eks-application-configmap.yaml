@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-configmap
+data:
+  postgres_host: postgres-service
+  postgres_db: postgres
+
+  rabbit_mq_host: rabbitmq-service
