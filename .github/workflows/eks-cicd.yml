@@ -13,8 +13,7 @@ env:
   APP_DEPLOYMENT_YAML: eks-deployment-app.yaml
 
 defaults:
-  runs:
-    on: ubuntu-latest
+  runs-on: ubuntu-latest
 
 jobs:
   build-project:
