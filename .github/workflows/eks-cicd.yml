@@ -36,8 +36,13 @@ jobs:
       - name: Export Docker image to tar file
         run: docker save my-spring-app:latest -o image.tar
 
-#      - name: Copy image.tar to workspace
-#        run: mv image.tar $GITHUB_WORKSPACE
+      - name: Copy image.tar to workspace
+        run: |
+          if [ ! -f "$GITHUB_WORKSPACE/image.tar" ]; then
+            mv image.tar $GITHUB_WORKSPACE
+          else
+            echo "File already exists in the workspace. Skipping move operation."
+          fi
 
 
   push-to-ecr:
