@@ -33,6 +33,13 @@ jobs:
       - name: Build Docker image
         run: docker build -t my-spring-app .
 
+      - name: Move to Github Workspace
+      - name: Move Docker image to workspace
+        run: |
+          IMAGE_ID=$(docker images -q my-spring-app:latest)
+          OUTPUT=$(docker inspect --format='{{.GraphDriver.Data.MergedDir}}' $IMAGE_ID)
+          mv $OUTPUT $GITHUB_WORKSPACE
+
 
   push-to-ecr:
     name: Push Docker Image to ECR
