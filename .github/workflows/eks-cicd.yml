@@ -62,7 +62,7 @@ jobs:
     needs: build-and-push-image-to-ecr
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Replace image tag in deployment YAML
         run: |
