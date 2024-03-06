@@ -26,4 +26,5 @@ public class AppUser {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "role_id")
     private UserRole userRole;
+
 }
