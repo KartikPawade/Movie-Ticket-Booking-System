@@ -37,7 +37,7 @@ jobs:
         run: docker save my-spring-app:latest -o image.tar
 
       - name: Copy image.tar to workspace
-        run: docker cp image.tar $GITHUB_WORKSPACE
+        run: mv image.tar $GITHUB_WORKSPACE
 
 
   push-to-ecr:
