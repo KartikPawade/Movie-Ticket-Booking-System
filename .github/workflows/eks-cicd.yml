@@ -66,7 +66,7 @@ jobs:
 
       - name: Replace image tag in deployment YAML
         run: |
-          sed -i 's|image: ${{ ECR_REGISTRY }}/${{ ECR_REPOSITORY }}:.*|image: ${{ ECR_REGISTRY }}/${{ ECR_REPOSITORY }}:latest|' eks-deployment-app.yaml
+          sed -i 's|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest|' eks-deployment-app.yaml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -76,7 +76,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Connect to EKS Cluster
-        run: aws eks --region ${{ AWS_REGION }} update-kubeconfig --name ${{ EKS_CLUSTER_NAME }}
+        run: aws eks --region ${{ env.AWS_REGION }} update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }}
 
       - name: Deploy to EKS
         run: |
