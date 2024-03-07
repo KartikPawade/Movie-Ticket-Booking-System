@@ -18,6 +18,11 @@ spec:
           ports:
             - containerPort: 5672
           env:
+            - name: RABBIT_MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: rabbit_mq_host
             - name: RABBIT_MQ_USERNAME
               valueFrom:
                 secretKeyRef:
