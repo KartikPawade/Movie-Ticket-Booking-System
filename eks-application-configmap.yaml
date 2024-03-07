@@ -7,3 +7,5 @@ data:
   postgres_db: postgres
 
   rabbit_mq_host: rabbitmq-service
+
+  redis_host: redis-service

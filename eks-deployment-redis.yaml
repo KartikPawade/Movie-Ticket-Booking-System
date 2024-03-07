@@ -13,10 +13,16 @@ spec:
         app: redis
     spec:
       containers:
-      - name: redis-container
-        image: redis:latest
-        ports:
-        - containerPort: 6379
+        - name: redis-container
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+          env:
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: redis_host
 ---
 apiVersion: v1
 kind: Service
