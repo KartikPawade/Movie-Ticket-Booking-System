@@ -66,7 +66,7 @@ jobs:
 
       - name: Replace image tag in deployment YAML
         run: |
-          sed -i 's|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}|' eks-deployment-app.yaml
+          sed -i 's|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}|g' eks-deployment-app.yaml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
