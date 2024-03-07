@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres-deployment
+  name: postgres-persistent-server
 spec:
   replicas: 1
   selector:

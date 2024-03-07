@@ -1,7 +1,7 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: rabbitmq-deployment
+  name: rabbitmq-persistent-server
 spec:
   replicas: 1
   selector:
@@ -28,12 +28,25 @@ spec:
                 secretKeyRef:
                   name: application-secrets
                   key: rabbitmq_password
+          volumeMounts:
+            - name: rabbitmq-storage
+              mountPath: /rabbitmq/data
+  volumeClaimTemplates:
+    - metadata:
+        name: rabbitmq-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 50Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: rabbitmq-service
 spec:
+  clusterIP: None
   selector:
     app: rabbitmq
   ports:
