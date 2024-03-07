@@ -1,16 +1,3 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-service
-spec:
-  selector:
-    app: postgres
-  ports:
-    - protocol: TCP
-      port: 5432
-      targetPort: 5432
-
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -19,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: postgresql
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgresql
     spec:
       containers:
         - name: postgres-container
@@ -32,7 +19,7 @@ spec:
             - containerPort: 5432
           volumeMounts:
             - name: postgres-storage
-              mountPath: /var/lib/postgresql/data
+              mountPath: /postgres/data
           env:
             - name: POSTGRES_DB
               valueFrom:
@@ -54,6 +41,20 @@ spec:
         name: postgres-storage
       spec:
         accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
         resources:
           requests:
-            storage: 50Mi
+            storage: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+spec:
+  clusterIP: None
+  selector:
+    app: postgresql
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
