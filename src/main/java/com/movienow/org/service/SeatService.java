@@ -177,7 +177,10 @@ public class SeatService {
         } catch (Exception e) {
             throw new BadRequestException(e.getMessage());
         }
-        PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
+        // commenting out payment service call, as test-STRIPE-payment-API is not allowed in INDIA
+//        PaymentResponse paymentResponse = paymentGatewayService.paymentGateway(paymentRequest, totalPrice);
+        PaymentResponse paymentResponse = getPaymentResponseWithRandomChargeId();
+
         removeTemporaryBookingDetailsForUser(userName);
         if (paymentResponse != null && paymentResponse.getChargeId() != null) {
             try {
@@ -191,6 +194,35 @@ public class SeatService {
             return "Payment Successful";
         }
         return "Payment was unsuccessful.";
+    }
+
+    /**
+     * Used to get Payment Response with random chargeId
+     *
+     * @return
+     */
+    private PaymentResponse getPaymentResponseWithRandomChargeId() {
+        PaymentResponse paymentResponse = new PaymentResponse();
+        paymentResponse.setChargeId(getSaltString());
+        return paymentResponse;
+    }
+
+    /**
+     * Used to generate random String, to be used as chargeId
+     *
+     * @return
+     */
+    protected static String getSaltString() {
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder salt = new StringBuilder();
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+        return saltStr;
+
     }
 
     /**
