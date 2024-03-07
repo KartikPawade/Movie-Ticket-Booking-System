@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: movie-ticket-booking-system-container
-          image: 471112883352.dkr.ecr.ap-south-1.amazonaws.com/eks-movieticketbookingsystem:0.4
+          image: 471112883352.dkr.ecr.ap-south-1.amazonaws.com/eks-movieticketbookingsystem:latest
           ports:
             - containerPort: 8080
           env:

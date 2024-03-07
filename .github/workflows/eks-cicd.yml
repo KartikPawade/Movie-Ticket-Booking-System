@@ -51,11 +51,10 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: eks-movieticketbookingsystem
-          IMAGE_TAG: latest
 
         run: |
-          docker tag my-spring-app:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG                                 
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag my-spring-app:latest $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA                                 
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
 
   deploy-to-eks:
     name: Deploy to EKS
@@ -67,7 +66,7 @@ jobs:
 
       - name: Replace image tag in deployment YAML
         run: |
-          sed -i 's|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest|' eks-deployment-app.yaml
+          sed -i 's|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$GITHUB_SHA|' eks-deployment-app.yaml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
