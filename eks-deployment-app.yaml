@@ -54,6 +54,11 @@ spec:
                 secretKeyRef:
                   name: application-secrets
                   key: rabbitmq_password
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: application-configmap
+                  key: redis_host
 ---
 apiVersion: v1
 kind: Service
