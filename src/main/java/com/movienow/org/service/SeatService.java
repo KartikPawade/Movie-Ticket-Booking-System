@@ -105,7 +105,7 @@ public class SeatService {
             redisTemplate.opsForValue().set(key, bookingResponse.getSeatId(), expiryDurationInMinutes);
             userBookingDetailsList.add(userBookingDetails);
         }
-        redisTemplate.opsForHash().put(userName, userName, userBookingDetailsList);
+        redisTemplate.opsForHash().put(userName, showId, userBookingDetailsList);
         redisTemplate.expire(userName, Duration.ofMinutes(redisKeyExpiryTimeInMinutes));
 
         return "Seats Booked temporarily";
@@ -183,7 +183,7 @@ public class SeatService {
         Double totalPrice = (double) 0;
         Set<Long> seatIds = paymentRequest.getSeatIds();
         try {
-            List<UserBookingDetails> list = getBookingDetailsForUser(userName);
+            List<UserBookingDetails> list = getBookingDetailsForUser(userName, showId);
             if (list == null) throw new BadRequestException("Sorry, Invalid request");
             for (UserBookingDetails userBookingDetails : list) {
                 if (!seatIds.contains(userBookingDetails.getSeatId()) || !userBookingDetails.getShowId().equals(showId))
@@ -207,6 +207,7 @@ public class SeatService {
             }
             EmailDetails emailDetails = getEmailDetails(userName, totalPrice, seatIds);
             rabbitTemplate.convertAndSend(emailExchangeName, emailRoutingKey, emailDetails);
+            redisTemplate.opsForHash().delete(userName,showId);
             return "Payment Successful";
         }
         return "Payment was unsuccessful.";
@@ -254,10 +255,15 @@ public class SeatService {
      * Used to Fetch Seats booked temporarily by User
      *
      * @param userName
+     * @param showId
      * @return
      */
-    private List<UserBookingDetails> getBookingDetailsForUser(String userName) {
-        return (List<UserBookingDetails>) redisTemplate.opsForHash().get(userName, userName);
+    private List<UserBookingDetails> getBookingDetailsForUser(String userName, Long showId) {
+        try {
+            return (List<UserBookingDetails>) redisTemplate.opsForHash().get(userName, showId);
+        }catch (Exception ex){
+            throw new BadRequestException(ex.getMessage());
+        }
     }
 
     /**
