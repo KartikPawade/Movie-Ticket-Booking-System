@@ -1,8 +1,6 @@
 name: CI/CD pipeline for MovieTicketBookingSystem app on AWS EKS
 
 on:
-  push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
