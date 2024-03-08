@@ -8,4 +8,5 @@ import java.io.Serializable;
 public class UserBookingDetails implements Serializable {
     Long seatId;
     Double price;
+    Long showId;
 }

@@ -42,7 +42,7 @@ public class SeatService {
     private RabbitTemplate rabbitTemplate;
 
     @Value("${redis.key.expiryTimeInMinutes}")
-    private String redisKeyExpiryTime;
+    private long redisKeyExpiryTimeInMinutes;
 
     @Value("${rabbitmq.email.exchange.name}")
     private String emailExchangeName;
@@ -92,21 +92,34 @@ public class SeatService {
         if (bookingResponses.size() != seatIds.size()) {
             throw new BadRequestException("Sorry, some of the selected seats have been booked by this time.");
         }
-        validateIfSeatsAreBookedTemporarily(seatIds);
+        validateIfSeatsAreBookedTemporarily(showId, seatIds);
 
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userDetails.getUsername();
         List<UserBookingDetails> userBookingDetailsList = new ArrayList<>();
+        Duration expiryDurationInMinutes = Duration.ofMinutes(redisKeyExpiryTimeInMinutes);
+
         for (BookingResponse bookingResponse : bookingResponses) {
-            UserBookingDetails userBookingDetails = getUserBokkingDetails(bookingResponse);
-            redisTemplate.opsForHash().put(bookingResponse.getSeatId().toString(), bookingResponse.getSeatId(), userBookingDetails);
-            redisTemplate.expire(bookingResponse.getSeatId().toString(), Duration.ofMinutes(Integer.parseInt(redisKeyExpiryTime)));
-            userBookingDetailsList.add(getUserBokkingDetails(bookingResponse));
+            UserBookingDetails userBookingDetails = getUserBokkingDetails(bookingResponse, showId);
+            String key = getKey(showId, bookingResponse.getSeatId());
+            redisTemplate.opsForValue().set(key, bookingResponse.getSeatId(), expiryDurationInMinutes);
+            userBookingDetailsList.add(userBookingDetails);
         }
         redisTemplate.opsForHash().put(userName, userName, userBookingDetailsList);
-        redisTemplate.expire(userName, Duration.ofMinutes(Integer.parseInt(redisKeyExpiryTime)));
+        redisTemplate.expire(userName, Duration.ofMinutes(redisKeyExpiryTimeInMinutes));
 
         return "Seats Booked temporarily";
+    }
+
+    /**
+     * Used to get Redis Key, using showId and seatId
+     *
+     * @param showId
+     * @param seatId
+     * @return
+     */
+    private String getKey(Long showId, Long seatId) {
+        return "key: showId-" + showId + ", " + "seatId-" + seatId;
     }
 
     /**
@@ -114,9 +127,10 @@ public class SeatService {
      *
      * @param seatIds
      */
-    private void validateIfSeatsAreBookedTemporarily(List<Long> seatIds) {
+    private void validateIfSeatsAreBookedTemporarily(Long showId, List<Long> seatIds) {
         for (Long seatId : seatIds) {
-            if (redisTemplate.opsForHash().get(seatId.toString(), seatId) != null) {
+            String key = getKey(showId,seatId);
+            if (redisTemplate.opsForValue().get(key) != null) {
                 throw new BadRequestException("Some of requested seats are being booked by someone else.");
             }
         }
@@ -140,12 +154,14 @@ public class SeatService {
      * Used to get User Booking details
      *
      * @param bookingResponse
+     * @param showId
      * @return
      */
-    private UserBookingDetails getUserBokkingDetails(BookingResponse bookingResponse) {
+    private UserBookingDetails getUserBokkingDetails(BookingResponse bookingResponse, Long showId) {
         UserBookingDetails userBookingDetails = new UserBookingDetails();
         userBookingDetails.setSeatId(bookingResponse.getSeatId());
         userBookingDetails.setPrice(bookingResponse.getSeatPrice());
+        userBookingDetails.setShowId(showId);
         return userBookingDetails;
     }
 
@@ -170,7 +186,7 @@ public class SeatService {
             List<UserBookingDetails> list = getBookingDetailsForUser(userName);
             if (list == null) throw new BadRequestException("Sorry, Invalid request");
             for (UserBookingDetails userBookingDetails : list) {
-                if (!seatIds.contains(userBookingDetails.getSeatId()))
+                if (!seatIds.contains(userBookingDetails.getSeatId()) || !userBookingDetails.getShowId().equals(showId))
                     throw new BadRequestException("Invalid Seat Bookings Requested.");
                 totalPrice += userBookingDetails.getPrice();
             }
