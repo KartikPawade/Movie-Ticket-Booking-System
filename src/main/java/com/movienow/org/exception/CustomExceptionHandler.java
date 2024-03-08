@@ -54,9 +54,10 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<ExceptionResponse> accessDeniedException(Exception ex) {
-        ExceptionResponse exceptionResponse = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR);
-        exceptionResponse.setMessage(ex.getMessage());
-        return buildResponseEntity(exceptionResponse);
+//        ExceptionResponse exceptionResponse = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR);
+//        exceptionResponse.setMessage(ex.getMessage());
+//        return buildResponseEntity(exceptionResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     @ExceptionHandler(value = ConstraintViolationException.class)
