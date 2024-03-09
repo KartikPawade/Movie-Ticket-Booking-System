@@ -1,8 +1,8 @@
 name: CI/CD pipeline for MovieTicketBookingSystem app on AWS EKS
 
 on:
-  pull_request:
-    branches: [ "master" ]
+#  pull_request:                 commenting out : as I have cluster deleted the EKS cluster
+#    branches: [ "master" ]
 
 
 env:
